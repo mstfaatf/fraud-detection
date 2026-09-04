@@ -1,2 +1,21 @@
-# Placeholder — Docker Compose setup is an end-of-project packaging deliverable.
-# Services (backend, frontend, postgres) will be defined here once local dev has stabilized.
+# Local Postgres for backend/db development (see SETUP.md for the connection
+# string convention). Full backend/frontend containerization is still an
+# end-of-project packaging deliverable -- this service is scoped to Postgres
+# only, so day-to-day dev keeps running the backend/frontend directly on the
+# host (see CLAUDE.md "Development Workflow").
+services:
+  postgres:
+    image: postgres:16
+    container_name: fraud-detection-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: fraud
+      POSTGRES_PASSWORD: fraud
+      POSTGRES_DB: fraud_detection
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:

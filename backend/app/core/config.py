@@ -41,5 +41,12 @@ class Settings(BaseSettings):
     # the loaded model at startup (see app/ml/explainer.py), never unpickled from disk.
     isolation_forest_path: Path = REPO_ROOT / "ml" / "models" / "isolation_forest.pkl"
 
+    # Default points at the local Docker Compose Postgres service (see
+    # docker-compose.yml / SETUP.md for the connection-string convention).
+    # Override with FRAUD_DATABASE_URL for Supabase or any other target --
+    # not hardcoded anywhere else in the app (app/db/session.py and
+    # alembic/env.py both read it from here).
+    database_url: str = "postgresql://fraud:fraud@localhost:5432/fraud_detection"
+
 
 settings = Settings()

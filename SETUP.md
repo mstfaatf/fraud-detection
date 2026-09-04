@@ -100,9 +100,65 @@ gitignored (see `.gitignore`) so it never gets committed. Once it's there, run
 
 ## Environment variables
 
-Backend configuration (database URL, Stripe keys, etc.) will be read from a `.env` file at the
-repo root via `python-dotenv` / `pydantic-settings`. `.env` is gitignored — no `.env.example`
-exists yet; this will be added once `backend/app/core` config is built out.
+Backend configuration (database URL, Stripe keys, etc.) is read from a `.env` file at the repo
+root via `python-dotenv` / `pydantic-settings`, with a `FRAUD_` prefix (e.g. `FRAUD_DATABASE_URL`,
+`FRAUD_LOG_LEVEL`). `.env` is gitignored — no `.env.example` exists yet.
+
+## Database (Postgres + Alembic)
+
+Local dev targets a **Docker Postgres container** (`docker-compose.yml`, `postgres` service) —
+Docker is used here for the database only, not for running the backend/frontend themselves (see
+`CLAUDE.md` → "Development Workflow"). The eventual public/live demo instead targets a hosted
+Supabase Postgres, which will reuse this exact same schema and migrations — only `FRAUD_DATABASE_URL`
+changes between the two.
+
+### 1. Start Postgres
+
+```bash
+docker compose up -d postgres
+```
+
+This starts a `postgres:16` container named `fraud-detection-postgres`, with a named volume
+(`postgres_data`) so data survives container restarts, on the standard port `5432`.
+
+### 2. Connection string convention
+
+```
+postgresql://<user>:<password>@<host>:<port>/<database>
+```
+
+The Docker Compose service is seeded with `POSTGRES_USER=fraud`, `POSTGRES_PASSWORD=fraud`,
+`POSTGRES_DB=fraud_detection`, matching `Settings.database_url`'s default in
+`backend/app/core/config.py`:
+
+```
+postgresql://fraud:fraud@localhost:5432/fraud_detection
+```
+
+This default is intentionally the local Docker connection string, so a fresh checkout works
+against `docker compose up -d postgres` with zero `.env` setup. Override it via
+`FRAUD_DATABASE_URL` in `.env` (or the environment) to point at Supabase or any other Postgres
+instance instead — nothing else in the app hardcodes a URL; both `backend/app/db/session.py` and
+`backend/alembic/env.py` read the same `settings.database_url`.
+
+### 3. Run migrations
+
+```bash
+cd backend
+alembic upgrade head          # apply all migrations
+alembic revision --autogenerate -m "description"   # generate a new migration after model changes
+```
+
+Run `alembic` commands from `backend/` (its working directory) so `alembic/env.py`'s `from app...`
+imports resolve the same way the app's own imports do.
+
+### 4. Verify
+
+```bash
+docker exec fraud-detection-postgres psql -U fraud -d fraud_detection -c "\dt"
+```
+
+should list `transactions`, `predictions`, and `alembic_version`.
 
 ## Running things day-to-day
 
