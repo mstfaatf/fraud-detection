@@ -96,14 +96,19 @@ EDA"):
 
 ## Potential leakage / artifact traps
 
-1. **Origin-balance-drained is too clean to be a "learned" pattern.** 97.7% fraud vs. 0%
-   legitimate is close to a hard rule, not a statistical tendency. It's real signal in *this*
-   dataset (not leakage in the technical sense — it's knowable at transaction time, not
-   future information), but it's an artifact of PaySim's synthetic fraud-injection method, not
-   evidence that real-world fraud looks like this. Any model trained here will likely hit very
-   high metrics almost entirely off this one engineered feature. **This needs to be called out
-   explicitly** when presenting results (e.g. in an interview) — strong performance here reflects
-   the dataset's synthetic construction, not a generalizable fraud-detection breakthrough.
+1. **Origin-balance-drained is too clean to be a "learned" pattern — and, separately, it's
+   unusable for our real-time use case regardless.** 97.7% fraud vs. 0% legitimate is close to a
+   hard rule, not a statistical tendency, and it's almost certainly an artifact of PaySim's
+   synthetic fraud-injection method rather than evidence real-world fraud looks like this. But
+   there's a second, independent, and more decisive problem: **`newbalanceOrig` and
+   `newbalanceDest` are post-transaction state.** Our platform scores a payment *before* it
+   executes — at decision time, the transaction hasn't happened yet, so these fields (and anything
+   derived from them) don't exist yet. **DECISION (locked in): `newbalanceOrig`, `newbalanceDest`,
+   and all features derived from them (`errorBalanceOrig`, `errorBalanceDest`,
+   `origin_fully_drained`) are excluded from the model's feature set entirely** — not flagged as a
+   caveat, not included with a warning label, excluded. This holds even if the drained-to-zero
+   pattern were a genuine (non-artifact) fraud behavior: it would still be leakage for a
+   pre-transaction real-time scorer.
 2. **Fraud rate by hour-of-day is confounded by volume, not a real time-of-day effect.** Don't
    feed a naive "hourly fraud rate" feature into the model — it would just be re-encoding
    legitimate-transaction volume troughs as a fraud signal. If time-of-day is used at all, prefer
@@ -113,37 +118,50 @@ EDA"):
    model (or, worse, a reader of the results) mistaking it for a legitimate detection signal it
    isn't.
 
-## Updated proposed feature list
+## Updated proposed feature list (finalized)
 
-**Real (raw, usable directly)**
+**Real (raw, usable — available at pre-transaction decision time)**
 - `step`
 - `type` (categorical — encode; only `TRANSFER`/`CASH_OUT` carry fraud)
 - `amount`
-- `oldbalanceOrg`, `newbalanceOrig`
-- `oldbalanceDest`, `newbalanceDest`
+- `oldbalanceOrg`
+- `oldbalanceDest`
 
-**Engineered (derived from raw fields, computable at transaction time, no leakage)**
+**Engineered (derived only from pre-transaction fields, no leakage)**
 - `hour_of_day` = `step % 24`
 - `day` = `step // 24`
 - `log_amount` = `log1p(amount)` (for models/visualizations sensitive to skew)
-- `errorBalanceOrig` = `oldbalanceOrg - amount - newbalanceOrig`
-- `errorBalanceDest` = `oldbalanceDest + amount - newbalanceDest`
-- `origin_fully_drained` = `(oldbalanceOrg == amount) & (newbalanceOrig == 0)` — our strongest
-  signal; must be presented with the artifact caveat above
+- `amount_to_balance_ratio` = `amount / (oldbalanceOrg + 1)` — uses only the *pre*-transaction
+  origin balance, safe for real-time scoring
 - `dest_is_merchant` = `nameDest.startswith("M")`
+
+**Excluded — leakage (not available at real-time decision time)**
+- `newbalanceOrig`, `newbalanceDest` — post-transaction state; a payment is scored *before* it
+  executes, so these values don't exist yet at decision time
+- `errorBalanceOrig`, `errorBalanceDest`, `origin_fully_drained` — all derived from the
+  post-transaction balance fields above, so they inherit the same leakage problem even though
+  `origin_fully_drained` was the single strongest raw correlate with fraud found in this EDA.
+  Excluded regardless of predictive power — see leakage trap #1 above.
+
+**Excluded — insufficient data for the trained model (velocity)**
+- Account-history / velocity features (transaction count or frequency per account, rolling
+  windows, etc.) — EDA found only 0.15% of `nameOrig` values repeat, so PaySim cannot support
+  meaningful behavioral/velocity features for training. **Not included in the model's input
+  list.** Note: a later-phase transaction simulator may still generate velocity-style demo
+  scenarios (rapid repeated transactions) for dashboard/UI purposes — those are demo inputs only,
+  not features the trained model was fit on. This is a documented dataset limitation, not a
+  silently dropped feature.
 
 **Drop / deprioritize**
 - `nameOrig`, `nameDest` as raw identifiers — too high-cardinality, minimal repeat activity
 - `isFlaggedFraud` — empirically confirmed non-predictive (see above); may keep as a passthrough
   reference column, not as a model input
 
-**To-be-added / synthetic (not present in PaySim; open item, not built yet)**
-- Any velocity/behavioral features (transactions per account per time window) — not supportable
-  from this dataset's near-zero repeat-customer activity; would need explicit synthetic
-  augmentation if we want this in the explainability story
-- Device/IP/geolocation-style features — not present in PaySim at all; would be a from-scratch
-  synthetic addition if pursued later (ties into the still-open "Stripe field-mapping adapter"
-  item in `CLAUDE.md`)
+**Synthetic / demo-only (not present in PaySim; never trained-model inputs)**
+- Merchant category, device/channel, geo-style fields — useful for dashboard flavor and
+  explainability storytelling later, but PaySim has no such fields and the trained model will
+  never see them as inputs. Ties into the still-open "Stripe field-mapping adapter" item in
+  `CLAUDE.md`.
 
 ## Not done here (by design)
 
