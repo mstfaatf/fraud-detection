@@ -9,3 +9,10 @@ python-dotenv
 stripe
 pytest
 httpx
+
+# ML integration layer (backend/app/ml/) -- unpickling the trained models and
+# reusing ml/src/preprocessing.py needs these available in the backend's env too.
+pandas
+scikit-learn
+xgboost
+shap
