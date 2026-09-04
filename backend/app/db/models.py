@@ -12,7 +12,7 @@ model side by side) as an additional `Prediction` row against the same
 `Prediction`, so a transaction can accumulate many predictions but each
 prediction points at exactly one transaction.
 
-Not wired into POST /predict yet -- this module is schema-only for now.
+Wired into POST /predict in app/services/prediction_service.py.
 """
 
 from __future__ import annotations

@@ -2,8 +2,11 @@
 
 Runs the incoming transaction through the same preprocessing used at
 training time, scores it with the XGBoost model loaded once at startup,
-attaches a secondary (never blended) Isolation Forest anomaly signal, and
-explains the score with SHAP.
+attaches a secondary (never blended) Isolation Forest anomaly signal,
+explains the score with SHAP, and persists the transaction + prediction
+(see prediction_service._persist_prediction for the sync-write / DB-failure
+handling reasoning -- this route just supplies the request-scoped db
+session via the get_db dependency).
 
 Explainer reuse note: `app.state.shap_explainer` is the TreeExplainer built
 once in main.py's lifespan handler, not reconstructed per-request. There's
@@ -15,8 +18,10 @@ repeatedly reconstructing the explainer around it would not be.
 
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
+from sqlalchemy.orm import Session
 
+from app.db.session import get_db
 from app.schemas.prediction import PredictionResponse, TransactionInput
 from app.services.prediction_service import predict_transaction
 
@@ -26,7 +31,7 @@ _REQUIRED_STATE_ATTRS = ("xgb_model", "model_metadata", "shap_explainer", "isola
 
 
 @router.post("/predict", response_model=PredictionResponse)
-def predict(payload: TransactionInput, request: Request) -> PredictionResponse:
+def predict(payload: TransactionInput, request: Request, db: Session = Depends(get_db)) -> PredictionResponse:
     state = request.app.state
     missing = [attr for attr in _REQUIRED_STATE_ATTRS if getattr(state, attr, None) is None]
     if missing:
@@ -41,4 +46,5 @@ def predict(payload: TransactionInput, request: Request) -> PredictionResponse:
         model_metadata=state.model_metadata,
         explainer=state.shap_explainer,
         isolation_forest=state.isolation_forest,
+        db=db,
     )
