@@ -58,6 +58,46 @@ system:
 Run them from the repo root with `bash scripts/<name>.sh` (Git Bash on Windows, or any POSIX
 shell on macOS/Linux).
 
+## Dataset acquisition
+
+The project uses **PaySim** — Synthetic Financial Datasets For Fraud Detection —
+from Kaggle: https://www.kaggle.com/datasets/ealaxi/paysim1
+
+### Option A: automated download (kagglehub)
+
+```bash
+python ml/src/download_data.py
+```
+
+This uses `kagglehub` to pull the dataset and copies the CSV into `ml/data/raw/`. It requires a
+Kaggle API token:
+
+1. Log in to Kaggle, go to https://www.kaggle.com/settings (Account tab).
+2. Under "API", click "Create New Token" — this downloads `kaggle.json`.
+3. Place it at:
+   - Windows: `C:\Users\<you>\.kaggle\kaggle.json`
+   - macOS/Linux: `~/.kaggle/kaggle.json`
+
+   Or, instead of the file, set two environment variables: `KAGGLE_USERNAME` and `KAGGLE_KEY`
+   (the values come from `kaggle.json`).
+4. Re-run `python ml/src/download_data.py`.
+
+If the download fails, the script prints these same setup steps.
+
+### Option B: manual download
+
+If the API route doesn't work for you (auth issues, corporate network, etc.), download the file
+by hand:
+
+1. Go to https://www.kaggle.com/datasets/ealaxi/paysim1 (log in if needed).
+2. Click "Download" to get the dataset as a zip file.
+3. Unzip it and place the resulting CSV (`PS_20174392719_1491204439457_log.csv`) directly in
+   `ml/data/raw/`.
+
+Either way, the end state is the same: a PaySim CSV sitting in `ml/data/raw/`, which is
+gitignored (see `.gitignore`) so it never gets committed. Once it's there, run
+`python ml/src/data_prep.py` to sanity-check it loaded correctly.
+
 ## Environment variables
 
 Backend configuration (database URL, Stripe keys, etc.) will be read from a `.env` file at the
