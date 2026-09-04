@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Run backend test suite.
+# Run backend and ml test suites.
 set -e
 cd "$(dirname "$0")/.."
 
-pytest backend/tests
+pytest backend/tests ml/tests
