@@ -159,17 +159,14 @@ def check_split_skew(train_df: pd.DataFrame, test_df: pd.DataFrame) -> list:
     return warnings
 
 
-def propose_adjusted_cutoff(df: pd.DataFrame, test_fraction: float = DEFAULT_TEST_FRACTION) -> int:
-    """If the trailing days of the dataset are fully degenerate (zero
-    legitimate transactions), exclude them from the usable step range and
-    recompute the naive 80/20 cutoff over what's left, instead of handing
-    the test set a period that's structurally impossible to evaluate a
-    false-positive rate on.
+def find_usable_max_step(df: pd.DataFrame) -> int:
+    """The last step before a *trailing* run of fully degenerate (zero
+    legitimate transaction) days. Only a run ending at the dataset's last
+    day counts — an isolated degenerate day in the middle of the timeline
+    wouldn't be fixable by moving a single cutoff anyway, and PaySim's only
+    such day (30) does sit at the very end.
 
-    This targets the specific, unambiguous failure (a 100%-fraud day) — it
-    does not attempt to fully flatten the softer, gradual volume decline in
-    the days before it, which is a real (if messy) characteristic of the
-    simulated data and is surfaced as a warning rather than engineered away.
+    Returns the true max step when there is no trailing degenerate run.
     """
     day_max = int(df["step"].max()) // 24
     degenerate_days = set(find_degenerate_days(df))
@@ -182,10 +179,50 @@ def propose_adjusted_cutoff(df: pd.DataFrame, test_fraction: float = DEFAULT_TES
             break
 
     if trailing_degenerate == 0:
-        return compute_cutoff_step(df, test_fraction)
+        return int(df["step"].max())
 
-    usable_max_step = (day_max - trailing_degenerate + 1) * 24 - 1
+    return (day_max - trailing_degenerate + 1) * 24 - 1
+
+
+def propose_adjusted_cutoff(df: pd.DataFrame, test_fraction: float = DEFAULT_TEST_FRACTION) -> int:
+    """If the trailing days of the dataset are fully degenerate (zero
+    legitimate transactions), exclude them from the usable step range and
+    recompute the naive 80/20 cutoff over what's left, instead of handing
+    the test set a period that's structurally impossible to evaluate a
+    false-positive rate on.
+
+    This targets the specific, unambiguous failure (a 100%-fraud day) — it
+    does not attempt to fully flatten the softer, gradual volume decline in
+    the days before it, which is a real (if messy) characteristic of the
+    simulated data and is surfaced as a warning rather than engineered away.
+
+    Note: this cutoff value alone is only half the fix. Feeding it into
+    plain `time_based_split` still lets the test side run to the dataset's
+    true max step, so the degenerate tail stays in the test set — it just
+    becomes a smaller fraction of a now-larger test set. Use
+    `time_based_split_adjusted` (which also bounds the test side at
+    `find_usable_max_step`) to actually drop the degenerate tail from both
+    splits.
+    """
+    usable_max_step = find_usable_max_step(df)
     return compute_cutoff_step(df, test_fraction, max_step=usable_max_step)
+
+
+def time_based_split_adjusted(
+    df: pd.DataFrame, test_fraction: float = DEFAULT_TEST_FRACTION
+) -> tuple:
+    """Chronological split that actually excludes a trailing degenerate run
+    (see `find_usable_max_step`) from both sides, not just from the cutoff
+    arithmetic. Rows beyond the usable range are dropped entirely — they're
+    a simulator artifact, not a period either split should be trained or
+    evaluated on. Returns (train_df, test_df, cutoff_step).
+    """
+    usable_max_step = find_usable_max_step(df)
+    cutoff_step = compute_cutoff_step(df, test_fraction, max_step=usable_max_step)
+    df = df.sort_values("step").reset_index(drop=True)
+    train_df = df[df["step"] <= cutoff_step]
+    test_df = df[(df["step"] > cutoff_step) & (df["step"] <= usable_max_step)]
+    return train_df, test_df, cutoff_step
 
 
 def time_based_train_test_split(

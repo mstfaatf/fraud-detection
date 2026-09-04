@@ -15,6 +15,7 @@ from split import (  # noqa: E402
     find_degenerate_days,
     propose_adjusted_cutoff,
     time_based_split,
+    time_based_split_adjusted,
     time_based_train_test_split,
 )
 
@@ -152,3 +153,39 @@ def test_propose_adjusted_cutoff_excludes_trailing_degenerate_day():
 
     adjusted = propose_adjusted_cutoff(df, test_fraction=0.2)
     assert adjusted < 9 * 24  # excludes day 9 entirely from the usable range
+
+
+def test_adjusted_cutoff_alone_does_not_remove_degenerate_day_from_naive_split():
+    """Regression test: propose_adjusted_cutoff() only shifts the cutoff
+    used to *compute* the split point -- feeding that value into plain
+    time_based_split still lets the test side run to the true max step, so
+    a trailing degenerate day survives in the test set. This was caught
+    while building the baseline-model notebook: check_split_skew still
+    flagged a degenerate day even after "using the adjusted cutoff."
+    time_based_split_adjusted (tested below) is the actual fix.
+    """
+    df = make_raw_df(n_days=10, rows_per_day=20, fraud_every=7)
+    last_day_mask = df["step"] // 24 == 9
+    df.loc[last_day_mask, "isFraud"] = 1
+
+    adjusted_cutoff = propose_adjusted_cutoff(df, test_fraction=0.2)
+    _, naive_test_df = time_based_split(df, adjusted_cutoff)
+
+    assert find_degenerate_days(naive_test_df) == [9]
+
+
+def test_time_based_split_adjusted_actually_excludes_degenerate_tail():
+    df = make_raw_df(n_days=10, rows_per_day=20, fraud_every=7)
+    last_day_mask = df["step"] // 24 == 9
+    df.loc[last_day_mask, "isFraud"] = 1  # last day fully degenerate
+
+    train_df, test_df, cutoff = time_based_split_adjusted(df, test_fraction=0.2)
+
+    assert find_degenerate_days(test_df) == []
+    assert find_degenerate_days(train_df) == []
+    assert test_df["step"].max() < 9 * 24  # day 9 dropped entirely, not just relabeled
+    assert train_df["step"].max() <= cutoff
+    assert test_df["step"].min() > cutoff
+    # the degenerate day's rows are gone from both splits, not silently
+    # merged into train
+    assert len(train_df) + len(test_df) < len(df)
