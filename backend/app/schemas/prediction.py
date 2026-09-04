@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from enum import Enum
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class TransactionType(str, Enum):
@@ -24,6 +24,16 @@ class TransactionInput(BaseModel):
     (see CLAUDE.md, "Feature Schema" -- Excluded, leakage). Accepting them
     here would invite the exact leakage that section rules out.
     """
+
+    # Deliberate choice: silently ignore unrecognized fields (pydantic v2's
+    # default) rather than reject them (extra="forbid"). A client forwarding
+    # a full upstream transaction object may reasonably include
+    # newbalanceOrig/newbalanceDest or other fields this API doesn't use --
+    # a 422 for that would be needlessly brittle. This is safe specifically
+    # because prediction_service.py builds its DataFrame from an explicit,
+    # fixed set of named fields (see predict_transaction()), so an ignored
+    # extra field can never silently reach preprocessing.build_features().
+    model_config = ConfigDict(extra="ignore")
 
     step: int = Field(ge=0, description="Hours since simulation start (PaySim's time unit).")
     type: TransactionType
