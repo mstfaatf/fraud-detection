@@ -54,6 +54,20 @@ so many false positives (12,329 at t=0.5, out of 148,449 legitimate test transac
 would be operationally unusable as-is; SMOTE's precision/recall balance is more usable out of the
 box, even before any formal threshold tuning.
 
+**On `sampling_strategy=0.1`:** this ratio was picked once, from reasoning, not tuned via grid
+search — no other ratios (e.g. 0.05, 0.3, 0.5, or full 1:1 rebalancing) were tried in this pass.
+The 0.1 choice was driven by two considerations documented in the notebook: keeping the resampled
+training set's compute cost bounded (full 1:1 SMOTE on ~6.2M training rows would synthesize
+another ~6.2M rows), and a methodological concern about synthesizing further interpolations of
+PaySim's already-algorithmically-generated fraud examples. **This means the reported SMOTE PR-AUC
+(0.6102) is one point on an untuned hyperparameter, not a ceiling or a fully-controlled comparison
+against `class_weight='balanced'`** — some meaningful fraction of the +0.1014 PR-AUC gap could be
+specific to this ratio rather than to SMOTE-vs-class-weighting as a general strategy. A proper
+sweep over `sampling_strategy` (and, for that matter, over decision thresholds/regularization
+strength for both variants) is left for a later pass if this comparison needs to bear more weight
+than "SMOTE is a reasonable comparison point to carry forward" — which is as far as this finding is
+used for in the Phase 3 recommendation below.
+
 ## Was SMOTE worth the added complexity?
 
 **Yes, on this evidence.** It's a genuinely more complex pipeline (a resampling step that must be
