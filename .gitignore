@@ -35,8 +35,17 @@ ml/data/processed/*
 !ml/data/processed/.gitkeep
 
 # --- Models ---
+# ml/models/* is gitignored by default (large/regeneratable local artifacts),
+# but the backend loads three of these at runtime (see backend/app/core/config.py
+# / app/ml/*.py) and Render deploys from this git repo -- those three are
+# committed so a fresh clone/deploy actually has something to load. Everything
+# else (e.g. shap_explainer.pkl -- the explainer is reconstructed fresh from the
+# model at startup, never unpickled, see app/ml/explainer.py) stays ignored.
 ml/models/*
 !ml/models/.gitkeep
+!ml/models/xgboost_model.pkl
+!ml/models/model_metadata.json
+!ml/models/isolation_forest.pkl
 
 # --- Editor / OS ---
 .vscode/

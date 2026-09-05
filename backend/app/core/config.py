@@ -68,6 +68,19 @@ class Settings(BaseSettings):
     supabase_database_url: str | None = Field(default=None, validation_alias="SUPABASE_DATABASE_URL")
     supabase_direct_url: str | None = Field(default=None, validation_alias="SUPABASE_DIRECT_URL")
 
+    # CORS (see main.py) -- the exact production Vercel origin, e.g.
+    # "https://fraud-detection.vercel.app". `None` locally, where main.py's
+    # hardcoded localhost origins already cover dev. Read via a raw
+    # validation_alias for the same reason as the two Supabase URLs above:
+    # recognizable as a plain FRONTEND_ORIGIN platform env var on Render, not
+    # just inside this app's FRAUD_-prefixed convention.
+    frontend_origin: str | None = Field(default=None, validation_alias="FRONTEND_ORIGIN")
+
+    # Per-IP request cap for POST /predict (see main.py's slowapi limiter),
+    # in slowapi's "N/period" string format. Overridable so the demo-scale
+    # default can be loosened/tightened without a code change.
+    predict_rate_limit: str = Field(default="20/minute", validation_alias="PREDICT_RATE_LIMIT")
+
     @property
     def runtime_database_url(self) -> str:
         """What app/db/session.py's engine actually connects to."""

@@ -1,0 +1,27 @@
+{
+  "feature_columns": [
+    "oldbalanceOrg",
+    "oldbalanceDest",
+    "amount",
+    "hour_of_day",
+    "day_of_week",
+    "amount_to_balance_ratio",
+    "is_merchant_dest",
+    "type_CASH_IN",
+    "type_CASH_OUT",
+    "type_DEBIT",
+    "type_PAYMENT",
+    "type_TRANSFER"
+  ],
+  "threshold": 0.6144940853118896,
+  "hyperparameters": {
+    "n_estimators": 200,
+    "max_depth": 6,
+    "learning_rate": 0.1,
+    "scale_pos_weight": 974.0459191696808,
+    "random_state": 42
+  },
+  "split_cutoff_step": 575,
+  "pr_auc_test": 0.989183671976465,
+  "model_version": "1.0.0"
+}

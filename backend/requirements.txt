@@ -9,6 +9,7 @@ python-dotenv
 stripe
 pytest
 httpx
+slowapi
 
 # ML integration layer (backend/app/ml/) -- unpickling the trained models and
 # reusing ml/src/preprocessing.py needs these available in the backend's env too.
