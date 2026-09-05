@@ -12,11 +12,13 @@ from slowapi.errors import RateLimitExceeded
 from app.api.health import router as health_router
 from app.api.predict import router as predict_router
 from app.api.predictions import router as predictions_router
+from app.api.simulator import router as simulator_router
 from app.core.config import settings
 from app.core.limiter import limiter
 from app.ml.explainer import build_explainer
 from app.ml.isolation_forest_loader import load_isolation_forest
 from app.ml.model_loader import load_model
+from app.services.simulator import simulator
 
 
 @asynccontextmanager
@@ -27,6 +29,11 @@ async def lifespan(app: FastAPI):
     app.state.shap_explainer = build_explainer(model)
     app.state.isolation_forest = load_isolation_forest(settings)
     yield
+    # Shutdown: stop the simulator if it's running rather than leaving its
+    # asyncio task orphaned when the app process exits (e.g. a Render
+    # redeploy while a demo run is active).
+    if simulator.is_running:
+        await simulator.stop()
 
 
 app = FastAPI(title="Fraud Detection API", lifespan=lifespan)
@@ -81,3 +88,4 @@ app.add_middleware(
 app.include_router(health_router)
 app.include_router(predict_router)
 app.include_router(predictions_router)
+app.include_router(simulator_router)
