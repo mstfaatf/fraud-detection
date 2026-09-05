@@ -1,11 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import type { ReactNode } from "react";
 
 import { ShapBarChart } from "@/components/charts/shap-bar-chart";
 import { RiskBadge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { Legend, Row } from "@/components/ui/detail-row";
 import { ApiError } from "@/lib/api";
 import { formatAmount, formatProbability, formatTimestamp } from "@/lib/format";
 import { usePrediction } from "@/lib/hooks";
@@ -131,23 +131,5 @@ function BackLink() {
     <Link href="/" className="text-sm text-text-muted hover:text-accent">
       ← Back to Overview
     </Link>
-  );
-}
-
-function Row({ label, value }: { label: string; value: ReactNode }) {
-  return (
-    <div className="flex items-center justify-between gap-4">
-      <dt className="text-text-muted">{label}</dt>
-      <dd className="text-right text-text">{value}</dd>
-    </div>
-  );
-}
-
-function Legend({ color, label }: { color: string; label: string }) {
-  return (
-    <span className="flex items-center gap-1.5">
-      <span className="h-2 w-2 rounded-full" style={{ backgroundColor: color }} />
-      {label}
-    </span>
   );
 }

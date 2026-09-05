@@ -138,3 +138,43 @@ export function getPredictions(params: PredictionListParams = {}): Promise<Predi
 export function getPrediction(id: string): Promise<PredictionDetail> {
   return request<PredictionDetail>(`/predictions/${id}`);
 }
+
+interface FastApiValidationError {
+  loc: (string | number)[];
+  msg: string;
+}
+
+function isValidationErrorArray(value: unknown): value is FastApiValidationError[] {
+  return (
+    Array.isArray(value) &&
+    value.every((entry) => entry && typeof entry === "object" && "msg" in entry && "loc" in entry)
+  );
+}
+
+/** Turns an ApiError's raw response body into a message worth showing a
+ * user -- FastAPI's 422s carry a `detail` array of {loc, msg} entries (one
+ * per invalid field), its 503s (see api/predict.py) carry a plain `detail`
+ * string. Falls back to the raw body/status for anything else rather than
+ * swallowing the error. */
+export function describeApiError(error: unknown): string {
+  if (!(error instanceof ApiError)) {
+    return "Couldn't reach the backend. Is uvicorn running, and does NEXT_PUBLIC_API_URL point at it?";
+  }
+
+  try {
+    const body = JSON.parse(error.message) as { detail?: unknown };
+    if (typeof body.detail === "string") return body.detail;
+    if (isValidationErrorArray(body.detail)) {
+      return body.detail
+        .map((entry) => {
+          const field = entry.loc.filter((part) => part !== "body").join(".");
+          return field ? `${field}: ${entry.msg}` : entry.msg;
+        })
+        .join("; ");
+    }
+  } catch {
+    // Not JSON -- fall through to the raw body below.
+  }
+
+  return error.message || `Request failed with status ${error.status}`;
+}
