@@ -207,10 +207,11 @@ should list `transactions`, `predictions`, and `alembic_version` in both.
 ## Stripe (test mode)
 
 The Stripe adapter (`backend/app/services/stripe_adapter.py`) maps a Stripe PaymentIntent onto the
-model's `TransactionInput` schema, so `/predict` can score a real (test-mode, sandboxed) Stripe
-payment the same way it scores a simulator-generated or hand-submitted one. **Test-mode keys
-only** — sandboxed by Stripe, no real money ever moves, and this project has no reason to hold a
-live-mode key at all.
+model's `TransactionInput` schema, and `POST /webhooks/stripe` (`backend/app/api/
+stripe_webhooks.py`) uses it to score a real (test-mode, sandboxed) Stripe payment in real time and
+cancel it if the model flags it as fraud — see CLAUDE.md's Phase 9 write-up for the full adapter
+simplifications and webhook contract. **Test-mode keys only** — sandboxed by Stripe, no real money
+ever moves, and this project has no reason to hold a live-mode key at all.
 
 Add these to `.env` (repo root, gitignored — key names only, get the real values from your own
 Stripe Dashboard, do not hardcode them anywhere in source):
@@ -218,7 +219,7 @@ Stripe Dashboard, do not hardcode them anywhere in source):
 ```
 STRIPE_SECRET_KEY=sk_test_...
 STRIPE_PUBLISHABLE_KEY=pk_test_...
-STRIPE_WEBHOOK_SECRET=whsec_...   # unused for now -- no webhook endpoint exists yet
+STRIPE_WEBHOOK_SECRET=whsec_...   # per-session value from `stripe listen` -- see below
 ```
 
 ### Getting test-mode keys
@@ -228,14 +229,48 @@ STRIPE_WEBHOOK_SECRET=whsec_...   # unused for now -- no webhook endpoint exists
    entirely separate credentials.
 3. Go to **Developers → API keys**. Copy the **Publishable key** (`pk_test_...`) and reveal +
    copy the **Secret key** (`sk_test_...`).
-4. `STRIPE_WEBHOOK_SECRET` (`whsec_...`) comes from **Developers → Webhooks** once a webhook
-   endpoint is registered — not needed yet, since no webhook endpoint exists in this project (see
-   CLAUDE.md).
 
 `backend/app/core/config.py`'s `Settings` reads all three as raw env var names (not the usual
 `FRAUD_` prefix), the same convention already used for `SUPABASE_DATABASE_URL`/`FRONTEND_ORIGIN` —
 so they read identically whether set in this project's `.env` or as a platform env var on a host
 like Render.
+
+### Testing the webhook locally
+
+`STRIPE_WEBHOOK_SECRET` is **not** a stable dashboard value the way the other two keys are — it's
+printed fresh by the [Stripe CLI](https://docs.stripe.com/stripe-cli) each time you start
+`stripe listen`, and only that value verifies signatures for the forwarded events in that
+session.
+
+1. Install the Stripe CLI, then either `stripe login` (interactive, browser-based) or skip login
+   entirely and pass `--api-key sk_test_...` on every command below (what this project's own
+   verification used, since a non-interactive environment can't complete the browser flow).
+2. Start the backend (`uvicorn app.main:app --reload`, from `backend/`).
+3. In another terminal, start the forwarder — this both forwards events **and** prints the
+   `whsec_...` secret for this session:
+   ```bash
+   stripe listen --forward-to localhost:8000/webhooks/stripe --api-key sk_test_...
+   ```
+   Copy the printed `whsec_...` into `.env` as `STRIPE_WEBHOOK_SECRET`, then restart the backend
+   so it picks up the new value (`Settings` is read once per process at startup).
+4. In a third terminal, fire a real (test-mode) event:
+   ```bash
+   stripe trigger payment_intent.created --api-key sk_test_...
+   ```
+   This creates a real test-mode PaymentIntent via the Stripe API (no real money — test mode) and
+   Stripe delivers the resulting webhook event through your `stripe listen` tunnel to your local
+   `/webhooks/stripe`. `stripe listen`'s own terminal shows the forwarded event and the response
+   status code your endpoint returned (200/400/etc.); your backend's own logs show the scoring
+   result. `stripe trigger`'s fixture always creates a small ($20), non-customer-attached
+   PaymentIntent, so it will essentially always score as legitimate — to see a real cancellation,
+   create a PaymentIntent directly via the API instead, attached to a customer whose seeded
+   `wallet_balance` metadata equals the PaymentIntent's own `amount` (the model's core
+   draining-pattern fraud signature — see CLAUDE.md).
+5. Check the result three ways: the HTTP status `stripe listen` printed for the event, the
+   `transactions`/`predictions` rows written with `source = 'stripe_test'` (`docker exec
+   fraud-detection-postgres psql -U fraud -d fraud_detection -c "SELECT ... WHERE source =
+   'stripe_test'"`), and the real PaymentIntent's `status` via the Stripe API/Dashboard (`canceled`
+   if the model flagged it, unchanged otherwise).
 
 ## Running things day-to-day
 

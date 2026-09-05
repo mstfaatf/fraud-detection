@@ -32,7 +32,22 @@ if str(ML_SRC_DIR) not in sys.path:
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_prefix="FRAUD_", env_file=".env", extra="ignore")
+    # env_file is REPO_ROOT / ".env", not the literal relative string ".env"
+    # -- a real bug found and fixed in Phase 9 part 2's live Stripe webhook
+    # verification: pydantic-settings resolves a relative env_file against the
+    # process's cwd at Settings() instantiation time, not against this file's
+    # own directory. SETUP.md's/CLAUDE.md's documented dev workflow runs the
+    # backend as `uvicorn app.main:app --reload` from backend/ as cwd, so the
+    # relative ".env" was silently resolving to backend/.env (which has never
+    # existed) instead of the real repo-root .env -- meaning every setting
+    # that depends on .env and has no safe hardcoded default (Supabase's
+    # variables, frontend_origin, and now the Stripe keys) silently read as
+    # unset whenever the backend was started exactly the way the docs say to.
+    # Anchoring to REPO_ROOT (already resolved above for ml/src/) makes this
+    # correct regardless of cwd.
+    model_config = SettingsConfigDict(
+        env_prefix="FRAUD_", env_file=str(REPO_ROOT / ".env"), extra="ignore"
+    )
 
     log_level: str = "INFO"
 

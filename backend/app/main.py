@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
@@ -13,10 +14,24 @@ from app.api.health import router as health_router
 from app.api.predict import router as predict_router
 from app.api.predictions import router as predictions_router
 from app.api.simulator import router as simulator_router
+from app.api.stripe_webhooks import router as stripe_webhooks_router
 from app.core.config import settings
 from app.core.limiter import limiter
 from app.ml.explainer import build_explainer
 from app.ml.isolation_forest_loader import load_isolation_forest
+
+# Applies settings.log_level to the root logger -- previously read into
+# Settings but never actually wired to Python's logging module, so every
+# `logger.exception`/`logger.warning` call in this codebase (prediction
+# persistence failures, simulator errors, and this phase's Stripe webhook
+# rejections/ML-outage drops) silently went nowhere. Surfaced by this phase's
+# own "log loudly" requirement for the webhook's error paths. force=True is
+# required, not decorative: uvicorn's own Config.configure_logging() runs its
+# dictConfig on the root logger before this module is even imported (uvicorn
+# resolves/imports the app string as part of that same startup sequence), so
+# plain basicConfig() -- a no-op once the root logger already has handlers --
+# would otherwise silently do nothing here.
+logging.basicConfig(level=settings.log_level, force=True)
 from app.ml.model_loader import load_model
 from app.services.simulator import simulator
 
@@ -89,3 +104,4 @@ app.include_router(health_router)
 app.include_router(predict_router)
 app.include_router(predictions_router)
 app.include_router(simulator_router)
+app.include_router(stripe_webhooks_router)

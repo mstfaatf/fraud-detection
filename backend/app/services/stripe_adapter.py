@@ -75,7 +75,6 @@ would belong to a future webhook-endpoint phase, not this adapter.
 
 from __future__ import annotations
 
-from collections.abc import Mapping
 from datetime import datetime, timezone
 from typing import Any
 
@@ -149,27 +148,35 @@ def get_or_create_demo_customer(
     )
 
 
-def extract_wallet_balance(customer: Mapping[str, Any]) -> float:
+def extract_wallet_balance(customer: Any) -> float:
     """Reads the synthetic wallet balance off a Stripe Customer's metadata
-    (or an equivalent plain dict/mapping, e.g. from an expanded PaymentIntent
-    or a fabricated test payload). Raises loudly rather than silently
-    defaulting -- a customer with no seeded balance is a setup bug
-    (`get_or_create_demo_customer` should have been called first), not a
-    case to paper over with a made-up number.
+    (or an equivalent plain dict, e.g. from a fabricated test payload).
+    Raises loudly rather than silently defaulting -- a customer with no
+    seeded balance is a setup bug (`get_or_create_demo_customer` should have
+    been called first), not a case to paper over with a made-up number.
+
+    Deliberately uses only `in`/`[]` (never `.get()`) throughout, and takes
+    `customer: Any` rather than `Mapping` -- a real `stripe.Customer` (and
+    its nested `.metadata`) is emphatically **not** a `dict`/`Mapping` in
+    this SDK version (confirmed directly: it raises `AttributeError` on
+    `.get()` with "use .to_dict() to convert it"), even though it supports
+    `[]`/`in` via its own `__getitem__`/`__contains__`. A plain fabricated
+    dict (this module's test suite) supports both styles, so restricting
+    this function to the subset both types actually share is what makes it
+    work against a real Stripe object and a test fixture alike.
     """
     metadata = customer["metadata"]
-    raw_balance = metadata.get(WALLET_BALANCE_METADATA_KEY)
-    if raw_balance is None:
-        customer_id = customer.get("id", "<unknown>")
+    if WALLET_BALANCE_METADATA_KEY not in metadata:
+        customer_id = customer["id"] if "id" in customer else "<unknown>"
         raise ValueError(
             f"Stripe customer {customer_id} has no '{WALLET_BALANCE_METADATA_KEY}' "
             "metadata -- call get_or_create_demo_customer() to seed one first."
         )
-    return float(raw_balance)
+    return float(metadata[WALLET_BALANCE_METADATA_KEY])
 
 
 def map_payment_intent_to_transaction_input(
-    payment_intent: Mapping[str, Any],
+    payment_intent: Any,
     wallet_balance_before: float,
 ) -> TransactionInput:
     """The actual Stripe -> model-input mapping. Pure and network-free: takes
@@ -202,24 +209,33 @@ def map_payment_intent_to_transaction_input(
     )
 
 
-def build_transaction_input_for_payment_intent(payment_intent: Mapping[str, Any]) -> TransactionInput:
+def build_transaction_input_for_payment_intent(payment_intent: Any) -> TransactionInput:
     """Convenience entrypoint for real usage: resolves the wallet balance
     (from an already-expanded `customer` field on the PaymentIntent, or by
-    calling the real Stripe API if `customer` is just an id string) and then
-    delegates to the pure mapping function above.
+    calling the real Stripe API if `customer` is just an id string, or by
+    creating a brand-new demo customer if there's no customer at all -- the
+    common case for a real trigger/test PaymentIntent, confirmed live: see
+    CLAUDE.md's Phase 9 part 2 verification) and then delegates to the pure
+    mapping function above.
 
-    Not exercised against a live Stripe call in this project's test suite --
-    `test_stripe_adapter.py` fabricates a PaymentIntent with an already-
-    expanded `customer` dict specifically so this whole path is testable
-    without network access.
+    Branches on `isinstance(customer_field, str)` / `is None` only -- never
+    on `isinstance(customer_field, Mapping)` -- because a real, already-
+    expanded `stripe.Customer` object does not satisfy `Mapping` in this SDK
+    version (confirmed directly against the installed stripe package: it
+    isn't a dict subclass and isn't registered as a Mapping), even though it
+    supports `[]`/`in`. Anything that's neither `None` nor a plain id string
+    is treated as an already-expanded customer object as-is (dict or real
+    StripeObject both work, since extract_wallet_balance only ever uses
+    `[]`/`in` on it).
     """
-    customer_field = payment_intent.get("customer")
-    if isinstance(customer_field, Mapping):
-        customer: Mapping[str, Any] = customer_field
+    customer_field = payment_intent["customer"] if "customer" in payment_intent else None
+
+    if customer_field is None:
+        customer: Any = get_or_create_demo_customer(None)
     elif isinstance(customer_field, str):
         customer = get_or_create_demo_customer(customer_field)
     else:
-        customer = get_or_create_demo_customer(None)
+        customer = customer_field
 
     wallet_balance_before = extract_wallet_balance(customer)
     return map_payment_intent_to_transaction_input(payment_intent, wallet_balance_before)

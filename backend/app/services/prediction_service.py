@@ -34,6 +34,7 @@ def predict_transaction(
     explainer: Any,
     isolation_forest: Any,
     db: Session,
+    source: str = "paysim_sim",
 ) -> PredictionResponse:
     raw_df = pd.DataFrame(
         [
@@ -95,7 +96,7 @@ def predict_transaction(
         model_version=str(model_metadata.get("model_version", "unknown")),
     )
 
-    _persist_prediction(db, payload, response, full_shap_explanation)
+    _persist_prediction(db, payload, response, full_shap_explanation, source)
 
     return response
 
@@ -105,6 +106,7 @@ def _persist_prediction(
     payload: TransactionInput,
     response: PredictionResponse,
     full_shap_explanation: list[ShapContribution],
+    source: str,
 ) -> None:
     """Writes one `transactions` row + one linked `predictions` row.
 
@@ -134,6 +136,7 @@ def _persist_prediction(
             # (nameDest starts with "M") rather than reading it back out of
             # X, which has already been cast to float by this point.
             is_merchant_dest=payload.nameDest.startswith("M"),
+            source=source,
         )
         db.add(transaction)
         db.flush()  # assigns transaction.id without committing yet

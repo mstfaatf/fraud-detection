@@ -65,6 +65,17 @@ class Transaction(Base):
     # feature schema -- stored rather than recomputed on read so the stored
     # row reflects exactly what preprocessing.build_features() saw.
     is_merchant_dest: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    # Where this transaction actually came from -- "paysim_sim" (the
+    # simulator, POST /predict / Test a Transaction, anything scored through
+    # the PaySim-shaped TransactionInput schema directly) or "stripe_test"
+    # (a real Stripe test-mode PaymentIntent, scored via
+    # app/api/stripe_webhooks.py + app/services/stripe_adapter.py). A plain
+    # string, not a Postgres enum, so a future third source doesn't need a
+    # migration to add an enum value. server_default backfills every
+    # pre-existing row to "paysim_sim" (see the migration that added this
+    # column) -- new rows always pass `source` explicitly at the ORM layer
+    # instead of relying on the server default.
+    source: Mapped[str] = mapped_column(String, nullable=False, server_default="paysim_sim")
 
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
