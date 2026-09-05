@@ -1,0 +1,39 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * Design tokens for the fraud-detection dashboard. Dark-only by design (this
+ * is a fintech-dashboard aesthetic choice, not an adaptive light/dark app) --
+ * see CLAUDE.md's frontend-scaffolding phase for the full palette rationale.
+ *
+ * Base: a warm graphite, not pure black-on-indigo. Accent: a single muted
+ * gold/ochre used for chrome (nav, links, primary actions) -- deliberately
+ * never used for risk semantics, so it can't be confused with the fraud/legit
+ * colors below. Risk colors are intentionally minimal (two filled states,
+ * fraud/legit; anomaly is an outline, not a third filled color) rather than
+ * a full status-color rainbow.
+ */
+:root {
+  --color-bg: #131316;
+  --color-surface: #1b1b20;
+  --color-surface-2: #222229;
+  --color-border: #2c2c33;
+
+  --color-text: #e9e6df;
+  --color-text-muted: #9c968c;
+  --color-text-faint: #66605a;
+
+  --color-accent: #c9a04a;
+  --color-accent-soft: #3a2f1c;
+
+  --color-risk-fraud: #d1574a;
+  --color-risk-fraud-soft: #3a201d;
+  --color-risk-legit: #6ea672;
+  --color-risk-legit-soft: #1f2b21;
+  --color-risk-anomaly: #5b8a91;
+}
+
+body {
+  background: var(--color-bg);
+}
