@@ -25,20 +25,14 @@ services:
     # locally from backend/ (see SETUP.md) -- $PORT is Render's assigned
     # port, not the local-dev default of 8000.
     startCommand: uvicorn app.main:app --app-dir backend --host 0.0.0.0 --port $PORT
-    # Applies pending Alembic migrations against the real target database on
-    # every deploy, before traffic is routed to the new instance -- safe to
-    # run even when there's nothing new to apply (Phase 6 part 3 already
-    # migrated Supabase once by hand; this makes future schema changes
-    # deploy automatically instead of needing another manual `alembic
-    # upgrade head`). Runs against migration_database_url (SUPABASE_DIRECT_URL
-    # below), the same direct/session-pooler connection Alembic needs per
-    # CLAUDE.md's pooled-vs-direct reasoning.
-    # NOTE: preDeployCommand requires a paid Render instance type -- if the
-    # free plan rejects this key, delete this line and instead run
-    # `cd backend && alembic upgrade head` by hand once via the Render Shell
-    # tab after the first deploy (schema is already migrated as of Phase 6
-    # part 3, so this only matters for *future* schema changes either way).
-    preDeployCommand: cd backend && alembic upgrade head
+    # NOTE: no preDeployCommand -- Render's free instance type doesn't
+    # support it ("pre-deploy command is not supported for free tier
+    # services"), confirmed when this Blueprint was actually applied. Schema
+    # is already migrated against Supabase (Phase 6 part 3); for any *future*
+    # schema change, run `cd backend && alembic upgrade head` by hand once
+    # via the Render Shell tab (uses migration_database_url / SUPABASE_DIRECT_URL
+    # below, same as this would have). Revisit adding this back if the
+    # service is ever upgraded off the free plan.
     healthCheckPath: /health
     envVars:
       # --- Required: Supabase connection strings (see CLAUDE.md, Phase 6
