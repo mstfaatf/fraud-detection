@@ -1,17 +1,25 @@
 import type { ReactNode } from "react";
 
-type RiskVariant = "fraud" | "legit" | "anomaly";
+export type RiskVariant = "fraud" | "elevated" | "legit" | "anomaly";
 
 /**
- * fraud/legit are filled -- the two outcomes that actually gate a decision.
- * anomaly is an outline only, never filled: it's a secondary, non-blocking
- * signal (see ISOLATION_FOREST_FINDINGS.md / CLAUDE.md -- 0% unique-catch
- * precision on the eval set, never meant to override the fraud call), and
- * giving it its own filled color would read as a third decision state that
- * doesn't actually exist.
+ * fraud/legit are filled -- the two outcomes that actually gate a decision
+ * (is_fraud, i.e. fraud_probability >= threshold_used). elevated is an
+ * *outline* in the same red hue as fraud, not a new color -- it marks a
+ * probability that's meaningfully close to the threshold without crossing
+ * it (see lib/risk.ts -- the boundary is threshold_used / 2, derived from
+ * the model's real per-row threshold, not an arbitrary independent cutoff).
+ * anomaly is an outline in a third, unrelated hue: it's a genuinely
+ * different signal (Isolation Forest, not XGBoost's probability) and must
+ * never be confused with a fraud-probability tier (see
+ * ISOLATION_FOREST_FINDINGS.md / CLAUDE.md -- 0% unique-catch precision on
+ * the eval set, never meant to override the fraud call). Nothing here is
+ * filled except the two real decision outcomes -- deliberately not a
+ * status-color rainbow.
  */
 const VARIANT_STYLES: Record<RiskVariant, string> = {
   fraud: "border-risk-fraud/40 bg-risk-fraud-soft text-risk-fraud",
+  elevated: "border-risk-fraud bg-transparent text-risk-fraud",
   legit: "border-risk-legit/40 bg-risk-legit-soft text-risk-legit",
   anomaly: "border-risk-anomaly bg-transparent text-risk-anomaly",
 };

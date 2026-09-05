@@ -6,3 +6,7 @@
  * this project's demo-scale traffic).
  */
 export const POLL_INTERVAL_MS = 7_000;
+
+/** Rows shown in the Overview page's recent-activity table -- a feed, not
+ * the full paginated history (that's the Transactions page's job). */
+export const RECENT_TRANSACTIONS_LIMIT = 15;
