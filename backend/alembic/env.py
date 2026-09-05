@@ -5,10 +5,10 @@ from sqlalchemy import pool
 
 from alembic import context
 
-# Picks up DATABASE_URL and the model metadata from the app itself rather
-# than duplicating either in alembic.ini -- see the comment there. Run
-# alembic commands from backend/ (its cwd) so this import resolves the same
-# way the app's own imports do.
+# Picks up the model metadata from the app itself rather than duplicating it
+# in alembic.ini -- see the comment there. Run alembic commands from
+# backend/ (its cwd) so this import resolves the same way the app's own
+# imports do.
 from app.core.config import settings
 from app.db.models import Base
 
@@ -21,7 +21,16 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-config.set_main_option("sqlalchemy.url", settings.database_url)
+# Deliberately settings.migration_database_url, NOT the same
+# runtime_database_url app/db/session.py's engine uses. Against Supabase
+# those are two different connection strings: migrations run against the
+# *direct* (non-pooled) connection, because DDL doesn't play well through a
+# transaction-mode pooler (a migration can span more session/transaction
+# state than pgbouncer's transaction mode guarantees survives across
+# statements), while the app's normal runtime queries go through the pooled
+# connection instead (see app/db/session.py). Locally, both resolve to the
+# same Docker Postgres URL since there's no pooler in the loop at all.
+config.set_main_option("sqlalchemy.url", settings.migration_database_url)
 
 target_metadata = Base.metadata
 
