@@ -81,6 +81,21 @@ class Settings(BaseSettings):
     # default can be loosened/tightened without a code change.
     predict_rate_limit: str = Field(default="20/minute", validation_alias="PREDICT_RATE_LIMIT")
 
+    # Stripe test-mode integration (see app/services/stripe_adapter.py). Read via
+    # raw validation_alias, same convention as the Supabase/frontend_origin
+    # settings above, so these read identically whether set in this project's
+    # .env or as a literal platform env var on a host. All `None` by default --
+    # local dev without Stripe configured never breaks, since nothing outside
+    # stripe_adapter.py touches these, and stripe_adapter.py's own pure mapping
+    # function (map_payment_intent_to_transaction_input) doesn't need them
+    # either -- only the real-API helpers (get_or_create_demo_customer) do.
+    # stripe_webhook_secret is unused for now -- no webhook endpoint exists yet
+    # (out of scope for this pass, see CLAUDE.md), included here so it's ready
+    # for that phase without a second config change.
+    stripe_secret_key: str | None = Field(default=None, validation_alias="STRIPE_SECRET_KEY")
+    stripe_publishable_key: str | None = Field(default=None, validation_alias="STRIPE_PUBLISHABLE_KEY")
+    stripe_webhook_secret: str | None = Field(default=None, validation_alias="STRIPE_WEBHOOK_SECRET")
+
     @property
     def runtime_database_url(self) -> str:
         """What app/db/session.py's engine actually connects to."""

@@ -204,6 +204,39 @@ docker exec fraud-detection-postgres psql "<SUPABASE_DIRECT_URL or Session poole
 
 should list `transactions`, `predictions`, and `alembic_version` in both.
 
+## Stripe (test mode)
+
+The Stripe adapter (`backend/app/services/stripe_adapter.py`) maps a Stripe PaymentIntent onto the
+model's `TransactionInput` schema, so `/predict` can score a real (test-mode, sandboxed) Stripe
+payment the same way it scores a simulator-generated or hand-submitted one. **Test-mode keys
+only** — sandboxed by Stripe, no real money ever moves, and this project has no reason to hold a
+live-mode key at all.
+
+Add these to `.env` (repo root, gitignored — key names only, get the real values from your own
+Stripe Dashboard, do not hardcode them anywhere in source):
+
+```
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_PUBLISHABLE_KEY=pk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...   # unused for now -- no webhook endpoint exists yet
+```
+
+### Getting test-mode keys
+
+1. Log in to the [Stripe Dashboard](https://dashboard.stripe.com).
+2. Make sure the **Test mode** toggle (top-right) is on — test-mode and live-mode keys are
+   entirely separate credentials.
+3. Go to **Developers → API keys**. Copy the **Publishable key** (`pk_test_...`) and reveal +
+   copy the **Secret key** (`sk_test_...`).
+4. `STRIPE_WEBHOOK_SECRET` (`whsec_...`) comes from **Developers → Webhooks** once a webhook
+   endpoint is registered — not needed yet, since no webhook endpoint exists in this project (see
+   CLAUDE.md).
+
+`backend/app/core/config.py`'s `Settings` reads all three as raw env var names (not the usual
+`FRAUD_` prefix), the same convention already used for `SUPABASE_DATABASE_URL`/`FRONTEND_ORIGIN` —
+so they read identically whether set in this project's `.env` or as a platform env var on a host
+like Render.
+
 ## Running things day-to-day
 
 ```bash
