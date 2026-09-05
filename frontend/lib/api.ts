@@ -8,6 +8,8 @@
  *   - PredictionListItem / PredictionDetail / PredictionListResponse
  *       -> backend/app/schemas/prediction.py + backend/app/api/predictions.py
  *   - HealthResponse -> backend/app/api/health.py
+ *   - ScenarioWeights / SimulatorStartRequest / SimulatorStatus
+ *       -> backend/app/schemas/simulator.py + backend/app/api/simulator.py
  */
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
@@ -89,6 +91,31 @@ export interface HealthResponse {
   db_connected: boolean;
 }
 
+/** Relative weights, not required to already sum to 1 -- the backend
+ * normalizes whatever's given (see app/services/simulator.py's scenario
+ * picker). `velocity` is a UI/demo illustration of a rapid-succession
+ * burst, not a claim the model detects velocity patterns -- see the note
+ * next to its control on the Simulator page. */
+export interface ScenarioWeights {
+  legit: number;
+  fraud: number;
+  velocity: number;
+}
+
+export interface SimulatorStartRequest {
+  rate_per_second: number;
+  scenario_weights?: ScenarioWeights;
+}
+
+export interface SimulatorStatus {
+  running: boolean;
+  rate_per_second: number | null;
+  scenario_weights: ScenarioWeights | null;
+  transactions_generated: number;
+  started_at: string | null;
+  uptime_seconds: number | null;
+}
+
 export class ApiError extends Error {
   status: number;
 
@@ -137,6 +164,21 @@ export function getPredictions(params: PredictionListParams = {}): Promise<Predi
 
 export function getPrediction(id: string): Promise<PredictionDetail> {
   return request<PredictionDetail>(`/predictions/${id}`);
+}
+
+export function startSimulator(input: SimulatorStartRequest): Promise<SimulatorStatus> {
+  return request<SimulatorStatus>("/simulator/start", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
+export function stopSimulator(): Promise<SimulatorStatus> {
+  return request<SimulatorStatus>("/simulator/stop", { method: "POST" });
+}
+
+export function getSimulatorStatus(): Promise<SimulatorStatus> {
+  return request<SimulatorStatus>("/simulator/status");
 }
 
 interface FastApiValidationError {

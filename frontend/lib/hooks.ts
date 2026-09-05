@@ -7,8 +7,12 @@ import {
   getHealth,
   getPrediction,
   getPredictions,
+  getSimulatorStatus,
   predictTransaction,
+  startSimulator,
+  stopSimulator,
   type PredictionListParams,
+  type SimulatorStartRequest,
   type TransactionInput,
 } from "./api";
 import { POLL_INTERVAL_MS } from "./constants";
@@ -59,6 +63,42 @@ export function usePredictTransaction() {
     mutationFn: (input: TransactionInput) => predictTransaction(input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["predictions"] });
+    },
+  });
+}
+
+/** Same plain-polling approach as everywhere else in this app (no
+ * WebSockets) -- see the Simulator page for why POLL_INTERVAL_MS is fine
+ * here even for a "live" running/stopped indicator. */
+export function useSimulatorStatus() {
+  return useQuery({
+    queryKey: ["simulator-status"],
+    queryFn: getSimulatorStatus,
+    refetchInterval: POLL_INTERVAL_MS,
+    retry: shouldRetry,
+  });
+}
+
+/** Seeds the query cache with the response immediately (not just
+ * invalidating) so the Simulator page's running/stopped state flips the
+ * instant the request succeeds, rather than waiting up to POLL_INTERVAL_MS
+ * for the next status poll. */
+export function useStartSimulator() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: SimulatorStartRequest) => startSimulator(input),
+    onSuccess: (status) => {
+      queryClient.setQueryData(["simulator-status"], status);
+    },
+  });
+}
+
+export function useStopSimulator() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => stopSimulator(),
+    onSuccess: (status) => {
+      queryClient.setQueryData(["simulator-status"], status);
     },
   });
 }

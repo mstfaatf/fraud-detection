@@ -11,6 +11,7 @@ const NAV_ITEMS = [
   { href: "/", label: "Overview" },
   { href: "/transactions", label: "Transactions" },
   { href: "/test-transaction", label: "Test a Transaction" },
+  { href: "/simulator", label: "Simulator" },
 ];
 
 export function Sidebar() {
