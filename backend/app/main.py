@@ -9,6 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.health import router as health_router
 from app.api.predict import router as predict_router
+from app.api.predictions import router as predictions_router
 from app.core.config import settings
 from app.ml.explainer import build_explainer
 from app.ml.isolation_forest_loader import load_isolation_forest
@@ -39,3 +40,4 @@ app.add_middleware(
 
 app.include_router(health_router)
 app.include_router(predict_router)
+app.include_router(predictions_router)

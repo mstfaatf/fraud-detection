@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import uuid
+from datetime import datetime
 from enum import Enum
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -70,3 +72,48 @@ class PredictionResponse(BaseModel):
     # essentially always show ~0 and that is not "type doesn't matter here".
     shap_explanation: list[ShapContribution]
     model_version: str
+
+
+class PredictionListItem(BaseModel):
+    """One row of GET /predictions -- a Prediction joined with its
+    Transaction, flattened into the fields a dashboard feed actually needs.
+
+    shap_explanation is deliberately omitted here (unlike PredictionDetail):
+    a list view renders many rows at once and doesn't need per-row
+    explanations, so leaving it out keeps the list payload small. Extends
+    the existing PredictionResponse's vocabulary (TransactionType,
+    ShapContribution) rather than redefining it.
+    """
+
+    id: uuid.UUID
+    created_at: datetime
+
+    # Transaction input fields (joined in).
+    amount: float
+    type: TransactionType
+    oldbalanceOrg: float
+    oldbalanceDest: float
+    is_merchant_dest: bool
+
+    # Prediction output fields.
+    fraud_probability: float
+    is_fraud: bool
+    anomaly_flag: bool
+    anomaly_score: float
+    threshold_used: float
+    model_version: str
+
+
+class PredictionDetail(PredictionListItem):
+    """GET /predictions/{id} -- same joined shape as PredictionListItem, plus
+    the full SHAP explanation (not capped at 5 like POST /predict's response
+    -- a single-item detail view can afford to show the whole feature vector)."""
+
+    shap_explanation: list[ShapContribution]
+
+
+class PredictionListResponse(BaseModel):
+    items: list[PredictionListItem]
+    limit: int
+    offset: int
+    total: int

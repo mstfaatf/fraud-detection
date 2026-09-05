@@ -67,9 +67,15 @@ def test_predict_persists_transaction_and_linked_prediction():
         assert prediction.anomaly_flag == data["anomaly_flag"]
         assert prediction.anomaly_score == pytest.approx(data["anomaly_score"], abs=1e-9)
         assert prediction.model_version == data["model_version"]
-        assert [c["feature"] for c in prediction.shap_explanation] == [
-            c["feature"] for c in data["shap_explanation"]
-        ]
+        # The persisted row stores the *full* ranked SHAP list (so
+        # GET /predictions/{id} can show more than 5 -- see
+        # prediction_service.py), while the API response caps at 5. The
+        # stored list's first 5 entries must still match the response
+        # exactly, since both are the same ranking just truncated differently.
+        stored_features = [c["feature"] for c in prediction.shap_explanation]
+        response_features = [c["feature"] for c in data["shap_explanation"]]
+        assert len(stored_features) >= len(response_features)
+        assert stored_features[: len(response_features)] == response_features
     finally:
         # Keep the local dev DB from accumulating test rows across runs.
         if prediction is not None:

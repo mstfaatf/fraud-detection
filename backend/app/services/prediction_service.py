@@ -74,11 +74,16 @@ def predict_transaction(
 
     # shap_values() on a 1-row X returns a (1, n_features) array in the
     # model's log-odds output space (TreeExplainer's default for XGBClassifier).
+    # Ranked once, in full: the POST /predict response only surfaces the top 5
+    # (see PredictionResponse.shap_explanation), but the full ranked list is
+    # persisted below so GET /predictions/{id} can show more than 5 later
+    # (per CLAUDE.md's read-endpoint spec) without re-running SHAP.
     shap_row = explainer.shap_values(X)[0]
-    top_idx = sorted(range(len(shap_row)), key=lambda i: -abs(shap_row[i]))[:TOP_K_SHAP_FEATURES]
-    shap_explanation = [
-        ShapContribution(feature=feature_columns[i], shap_value=float(shap_row[i])) for i in top_idx
+    ranked_idx = sorted(range(len(shap_row)), key=lambda i: -abs(shap_row[i]))
+    full_shap_explanation = [
+        ShapContribution(feature=feature_columns[i], shap_value=float(shap_row[i])) for i in ranked_idx
     ]
+    shap_explanation = full_shap_explanation[:TOP_K_SHAP_FEATURES]
 
     response = PredictionResponse(
         fraud_probability=fraud_probability,
@@ -90,12 +95,17 @@ def predict_transaction(
         model_version=str(model_metadata.get("model_version", "unknown")),
     )
 
-    _persist_prediction(db, payload, response)
+    _persist_prediction(db, payload, response, full_shap_explanation)
 
     return response
 
 
-def _persist_prediction(db: Session, payload: TransactionInput, response: PredictionResponse) -> None:
+def _persist_prediction(
+    db: Session,
+    payload: TransactionInput,
+    response: PredictionResponse,
+    full_shap_explanation: list[ShapContribution],
+) -> None:
     """Writes one `transactions` row + one linked `predictions` row.
 
     Synchronous, in the request path -- a deliberate choice, not deferred to
@@ -135,7 +145,9 @@ def _persist_prediction(db: Session, payload: TransactionInput, response: Predic
             threshold_used=response.threshold_used,
             anomaly_flag=response.anomaly_flag,
             anomaly_score=response.anomaly_score,
-            shap_explanation=[c.model_dump() for c in response.shap_explanation],
+            # Full ranked list, not response.shap_explanation's top-5 -- see
+            # the comment at the call site above.
+            shap_explanation=[c.model_dump() for c in full_shap_explanation],
             model_version=response.model_version,
         )
         db.add(prediction)
