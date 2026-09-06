@@ -6,9 +6,13 @@ const DISMISS_KEY = "fraud-detection:free-tier-banner-dismissed";
 
 /**
  * Global, dismissible heads-up that this demo runs on free-tier hosting
- * (Render + Supabase) and can take 20-50s to respond after a period of
- * inactivity while the backend spins back up. Lives in the root layout, not
- * a single page -- a shared link could point straight at /checkout or
+ * (Render + Supabase) and can take up to about two minutes to respond after
+ * a period of inactivity while the backend spins back up. That figure is a
+ * real measurement, not an estimate -- see CLAUDE.md's "Free-tier
+ * cold-start mitigation" section: a genuine ~12h20m idle test (keep-alive
+ * ping disabled) found the actual cold start took roughly 95-105s, well
+ * past this component's original 20-50s guess. Lives in the root layout,
+ * not a single page -- a shared link could point straight at /checkout or
  * /simulator, not just Overview, so this needs to be visible regardless of
  * which page a visitor lands on first.
  *
@@ -51,7 +55,7 @@ export function FreeTierBanner() {
       <span className="flex items-center gap-2">
         <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
         This demo runs on free-tier hosting (Render + Supabase) — after a period of inactivity, the
-        first request can take 20–50 seconds while the backend spins back up. A hosting
+        first request can take up to about two minutes while the backend spins back up. A hosting
         characteristic, not a bug.
       </span>
       <button

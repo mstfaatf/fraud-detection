@@ -16,11 +16,12 @@ real-world scale.
 **Backend API:** [fraud-detection-api-blkr.onrender.com](https://fraud-detection-api-blkr.onrender.com) (interactive docs at `/docs`)
 
 > **Heads up:** this runs on free-tier hosting (Render + Supabase). After a period of inactivity,
-> the first request can take 20–50 seconds while the backend spins back up — that's a hosting
-> characteristic, not a bug. The site itself explains this if you hit it (a dismissible banner, and
-> a "waking up the backend…" status in place of a blank screen on any request that's taking a
-> while), and a scheduled keep-alive ping reduces how often it happens — but it can still happen on
-> a genuinely fresh visit.
+> the first request can take up to about two minutes while the backend spins back up — that's a
+> hosting characteristic, not a bug (a real overnight-idle test measured it directly at roughly
+> 95–105 seconds; see CLAUDE.md). The site itself explains this if you hit it (a dismissible
+> banner, and a "waking up the backend…" status in place of a blank screen on any request that's
+> taking a while), and a scheduled keep-alive ping reduces how often it happens — but it can still
+> happen on a genuinely fresh visit.
 
 ## Feature Walkthrough
 

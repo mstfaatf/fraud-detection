@@ -19,17 +19,15 @@ name: Keep-alive ping
 # reaching that threshold -- but a genuinely idle multi-day stretch could
 # still coincide with a missed/delayed run and cold-start anyway.
 
-# TEMPORARILY DISABLED as of 2026-09-06 02:25 UTC for a real cold-start
-# measurement (see CLAUDE.md's "Free-tier cold-start mitigation" section) --
-# the schedule trigger is commented out on purpose so Render/Supabase can
-# sit genuinely idle for several hours/overnight, replacing the earlier
-# 5.5-minute idle test from the Postgres persistence phase with a realistic
-# one. workflow_dispatch stays available so the ping can still be triggered
-# by hand if needed. Restore the `schedule:` block once that measurement is
-# done -- do not leave this disabled long-term.
+# Was temporarily disabled 2026-09-06 02:25 UTC through ~14:47 UTC (about
+# 12h20m) for a real cold-start measurement against a genuinely idle
+# Render/Supabase pair -- see CLAUDE.md's "Free-tier cold-start mitigation"
+# section for the result (a real cold start took ~95-105s, meaningfully
+# longer than this project's prior 20-50s estimate, which has been updated
+# accordingly). Restored below; back to its normal schedule.
 on:
-  # schedule:
-  #   - cron: "*/10 * * * *"
+  schedule:
+    - cron: "*/10 * * * *"
   workflow_dispatch: {}
 
 jobs:
