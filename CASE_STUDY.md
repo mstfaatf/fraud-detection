@@ -96,7 +96,7 @@ has to be read together with `is_merchant_dest`, which carries 100% of their com
 Presenting it as "transaction type doesn't matter here" would be a misreading of what the number
 actually means.
 
-### Docker Compose, framed honestly
+### Docker Compose
 
 A full three-service Docker Compose stack (Postgres, backend, frontend) exists in this repository
 as a packaging deliverable and containerization exercise. It's explicitly not part of how I
