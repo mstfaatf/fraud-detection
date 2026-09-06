@@ -3,14 +3,12 @@
 import Link from "next/link";
 import { useState } from "react";
 
-import { RiskBadge } from "@/components/ui/badge";
+import { PredictionsTable } from "@/components/predictions/predictions-table";
 import { Card } from "@/components/ui/card";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { StatTile } from "@/components/ui/stat-tile";
 import { POLL_INTERVAL_MS, RECENT_TRANSACTIONS_LIMIT } from "@/lib/constants";
-import { formatAmount, formatProbability, formatTimestamp } from "@/lib/format";
 import { usePredictions } from "@/lib/hooks";
-import { getFraudTier, getFraudTierLabel } from "@/lib/risk";
 
 type TriState = "all" | "true" | "false";
 
@@ -149,85 +147,7 @@ export default function OverviewPage() {
             </button>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead>
-                <tr className="border-b border-border text-text-faint">
-                  <th className="px-4 py-3 font-mono text-[11px] font-normal uppercase tracking-wide">
-                    Time
-                  </th>
-                  <th className="px-4 py-3 font-mono text-[11px] font-normal uppercase tracking-wide">
-                    Type
-                  </th>
-                  <th className="px-4 py-3 text-right font-mono text-[11px] font-normal uppercase tracking-wide">
-                    Amount
-                  </th>
-                  <th className="px-4 py-3 font-mono text-[11px] font-normal uppercase tracking-wide">
-                    Fraud probability
-                  </th>
-                  <th className="px-4 py-3 font-mono text-[11px] font-normal uppercase tracking-wide">
-                    Anomaly
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.map((item) => {
-                  const tier = getFraudTier(item.fraud_probability, item.threshold_used);
-                  return (
-                    <tr key={item.id} className="border-b border-border last:border-0">
-                      <td className="p-0">
-                        <Link
-                          href={`/transactions/${item.id}`}
-                          className="block whitespace-nowrap px-4 py-3 font-mono text-text-muted hover:bg-surface-2"
-                        >
-                          {formatTimestamp(item.created_at)}
-                        </Link>
-                      </td>
-                      <td className="p-0">
-                        <Link
-                          href={`/transactions/${item.id}`}
-                          className="block px-4 py-3 font-mono text-text hover:bg-surface-2"
-                        >
-                          {item.type}
-                        </Link>
-                      </td>
-                      <td className="p-0">
-                        <Link
-                          href={`/transactions/${item.id}`}
-                          className="block whitespace-nowrap px-4 py-3 text-right font-mono text-text hover:bg-surface-2"
-                        >
-                          {formatAmount(item.amount)}
-                        </Link>
-                      </td>
-                      <td className="p-0">
-                        <Link
-                          href={`/transactions/${item.id}`}
-                          className="flex items-center gap-2 whitespace-nowrap px-4 py-3 hover:bg-surface-2"
-                        >
-                          <RiskBadge variant={tier}>{getFraudTierLabel(tier)}</RiskBadge>
-                          <span className="font-mono text-xs text-text-muted">
-                            {formatProbability(item.fraud_probability)}
-                          </span>
-                        </Link>
-                      </td>
-                      <td className="p-0">
-                        <Link
-                          href={`/transactions/${item.id}`}
-                          className="block px-4 py-3 hover:bg-surface-2"
-                        >
-                          {item.anomaly_flag ? (
-                            <RiskBadge variant="anomaly">flagged</RiskBadge>
-                          ) : (
-                            <span className="text-text-faint">—</span>
-                          )}
-                        </Link>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+          <PredictionsTable items={items} />
         )}
       </Card>
     </div>
