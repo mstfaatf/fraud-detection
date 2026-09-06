@@ -19,7 +19,7 @@ export function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="flex h-screen w-60 shrink-0 flex-col justify-between border-r border-border bg-surface px-5 py-6">
+    <aside className="flex h-full w-60 shrink-0 flex-col justify-between border-r border-border bg-surface px-5 py-6">
       <div>
         <div className="mb-10">
           <p className="font-display text-lg text-text">Fraud Detection</p>
