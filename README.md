@@ -76,6 +76,28 @@ isolated ML demo running on the side.
 - **Deployment** — Render (backend), Vercel (frontend), Supabase (Postgres), GitHub Actions
   (scheduled keep-alive ping)
 
+## Running Locally
+
+Two ways to run this, for two different purposes:
+
+**1. Daily dev (recommended)** — `uvicorn --reload` + `npm run dev` + a local Postgres. This is
+what was actually used to build and test every phase of this project: fastest iteration, live
+reload on both backend and frontend, and no rebuild step between a code change and seeing it run.
+Full command-by-command setup is in [SETUP.md](./SETUP.md).
+
+**2. Full-stack Docker Compose** — `docker compose up -d --build`, then
+`docker compose exec backend alembic upgrade head` once to create the schema. This runs the whole
+stack (Postgres + FastAPI + Next.js) as three built containers with a single command — useful as a
+self-contained local setup and as practice containerizing a multi-service app for a portfolio, but
+it was **not** used during actual development of this project (that was always path 1 above), and
+it has **no connection to the live deployment** above (Render/Vercel/Supabase build and run
+independently of Docker entirely). Verified working end to end from a clean state: all three
+containers build and pass their healthchecks, migrations apply cleanly against the container's own
+Postgres, and a transaction submitted through the containerized frontend is scored by the
+containerized backend and persisted to the containerized database — see CLAUDE.md for the full
+verification writeup. Full instructions, including the (small, Supabase-free) env var setup, are in
+SETUP.md's "Docker Compose (full stack)" section.
+
 ## Known Limitations
 
 Pulled from this project's own decision log, not reinvented here — see the link below for the

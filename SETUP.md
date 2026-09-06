@@ -204,12 +204,28 @@ docker exec fraud-detection-postgres psql "<SUPABASE_DIRECT_URL or Session poole
 
 should list `transactions`, `predictions`, and `alembic_version` in both.
 
-## Docker Compose (full stack)
+## Running Locally: Two Paths
 
-A single `docker compose up` runs the entire stack (Postgres + FastAPI + Next.js) reproducibly,
-self-contained against its own local Postgres -- never Supabase. This is a packaging/
-containerization deliverable, not the day-to-day dev loop (see "Running things day-to-day" below
-for that).
+There are two genuinely different ways to run this project locally, for two different purposes.
+Don't confuse them, and don't assume Docker Compose was ever used to build this project day to
+day -- it wasn't; path 1 below is, and always has been, the actual dev loop.
+
+- **Path 1 -- daily dev (recommended)**: `uvicorn --reload` + `npm run dev` + a local (or hosted)
+  Postgres, run directly on the host. Fastest iteration, live reload on both sides, no rebuild step
+  between a code change and seeing it run. This is what every phase of this project was actually
+  built and tested against. See "Running things day-to-day" below for the exact commands.
+- **Path 2 -- full-stack Docker Compose**: `docker compose up`, below. Runs the whole stack
+  (Postgres + FastAPI + Next.js) as three built containers with one command. This exists as a
+  self-contained local setup and as practice containerizing a multi-service app for a portfolio --
+  **not** as a faster or better dev loop than path 1, and with **no connection** to the live
+  deployment (Render/Vercel/Supabase build and run independently of Docker entirely; see
+  `backend/Dockerfile`'s and `frontend/Dockerfile`'s own header comments).
+
+### Path 2: Docker Compose (full stack)
+
+Self-contained against its own local Postgres -- never Supabase, regardless of what's in the
+repo-root `.env` (see `docker-compose.yml`'s comments on the `backend` service for how that's
+enforced).
 
 ```bash
 docker compose up -d --build
@@ -234,6 +250,16 @@ without Stripe configured. No other env vars need to be set for this stack to ru
 docker compose down          # stop, keep the postgres_data volume (data persists)
 docker compose down -v       # stop and delete the volume (fresh database next time)
 ```
+
+**Verified working end to end from a genuinely clean state** (a fresh `docker compose down -v`,
+then `up --build`): all three containers built, started, and passed their healthchecks
+(`postgres` → `pg_isready`; `backend`/`frontend` → their own Dockerfiles' `HEALTHCHECK`s hitting
+`/health` and `/`); `alembic upgrade head` created both tables against the container's own,
+genuinely empty Postgres (confirmed directly via `psql \dt`, not just Alembic's exit code); and a
+transaction submitted through the containerized frontend at `localhost:3000` was scored by the
+containerized backend and persisted to the containerized database (confirmed via `GET /predictions`
+and a direct `psql` query). Full write-up, including one real bug this verification caught and
+fixed (`alembic.ini`/`alembic/` weren't in the backend image at all), is in CLAUDE.md.
 
 ## Stripe (test mode)
 
@@ -303,7 +329,7 @@ session.
    'stripe_test'"`), and the real PaymentIntent's `status` via the Stripe API/Dashboard (`canceled`
    if the model flagged it, unchanged otherwise).
 
-## Running things day-to-day
+## Path 1: Running Things Day-to-Day
 
 ```bash
 # Backend (from backend/, with venv active — once app/main.py exists)
@@ -319,4 +345,5 @@ bash scripts/run_eda.sh
 bash scripts/run_tests.sh
 ```
 
-See `CLAUDE.md` → "Important Commands" for the full reference.
+See `CLAUDE.md` → "Important Commands" for the full reference. For the alternative full-stack
+Docker Compose path, see "Running Locally: Two Paths" above.

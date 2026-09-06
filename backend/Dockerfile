@@ -68,6 +68,18 @@ COPY ml/models/xgboost_model.pkl ml/models/model_metadata.json ml/models/isolati
 
 COPY backend/app ./backend/app
 
+# Alembic config + migration scripts -- a real gap found and fixed during
+# Phase 11 part 4's live verification: this Dockerfile originally copied only
+# backend/app, so `docker compose exec backend alembic upgrade head` (the
+# documented migration step, see docker-compose.yml) failed with "No
+# 'script_location' key found in configuration" -- alembic.ini and alembic/
+# genuinely weren't in the image at all. `alembic.ini`'s `script_location =
+# %(here)s/alembic` resolves relative to alembic.ini's own directory (the
+# `%(here)s` token, Alembic 1.9+), so both must land at the same relative
+# path to WORKDIR /app/backend below as they have in the real repo.
+COPY backend/alembic.ini ./backend/alembic.ini
+COPY backend/alembic ./backend/alembic
+
 RUN useradd --create-home --uid 1000 appuser \
     && chown -R appuser:appuser /app /opt/venv
 USER appuser
