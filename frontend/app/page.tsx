@@ -60,10 +60,7 @@ export default function OverviewPage() {
       <h1 className="font-display text-3xl text-text">Overview</h1>
       <p className="mt-2 max-w-2xl text-text-muted">
         A live read of what the XGBoost model has scored so far, straight off{" "}
-        <code className="font-mono text-text">GET /predictions</code> — no separate analytics
-        pipeline behind it. Totals are all-time: there&apos;s no date-range query on the backend
-        yet, so a &quot;today&quot; number here would either be wrong or fetched by brute force —
-        neither is worth faking.
+        <code className="font-mono text-text">GET /predictions</code>.
       </p>
 
       <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-[2fr_1fr_1fr]">

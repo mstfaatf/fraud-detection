@@ -10,6 +10,9 @@ for demonstrating real engineering practice (time-based train/test splits, leaka
 design, model explainability, an honest accounting of the dataset's limits) over handling
 real-world scale.
 
+See **[ARCHITECTURE.md](./ARCHITECTURE.md)** for a system diagram and how the pieces fit together,
+and **[CLAUDE.md](./CLAUDE.md)** for the full phase-by-phase decision log.
+
 ## Live Demo
 
 **Frontend:** [fraud-detection-six-nu.vercel.app](https://fraud-detection-six-nu.vercel.app)
