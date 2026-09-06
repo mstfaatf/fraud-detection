@@ -33,7 +33,7 @@ export function StatusPill() {
     label = "waking up the backend…";
     dotClassName = "bg-accent animate-pulse";
     title =
-      "This demo runs on a free Render + Supabase tier that spins down when idle -- the first request after a quiet period can take up to about two minutes (measured directly, see CLAUDE.md). Not an error.";
+      "This demo runs on a free Render + Supabase tier -- a scheduled ping usually keeps it warm, but an occasional first request can still take up to a couple of minutes (measured directly, see CLAUDE.md). Not an error.";
   }
 
   return (

@@ -6,15 +6,18 @@ const DISMISS_KEY = "fraud-detection:free-tier-banner-dismissed";
 
 /**
  * Global, dismissible heads-up that this demo runs on free-tier hosting
- * (Render + Supabase) and can take up to about two minutes to respond after
- * a period of inactivity while the backend spins back up. That figure is a
- * real measurement, not an estimate -- see CLAUDE.md's "Free-tier
- * cold-start mitigation" section: a genuine ~12h20m idle test (keep-alive
- * ping disabled) found the actual cold start took roughly 95-105s, well
- * past this component's original 20-50s guess. Lives in the root layout,
- * not a single page -- a shared link could point straight at /checkout or
- * /simulator, not just Overview, so this needs to be visible regardless of
- * which page a visitor lands on first.
+ * (Render + Supabase), usually kept warm by a scheduled keep-alive ping, but
+ * that an occasional first visit can still take up to a couple of minutes to
+ * respond while the backend spins back up. The "up to a couple of minutes"
+ * figure is a real measurement, not an estimate -- see CLAUDE.md's
+ * "Free-tier cold-start mitigation" section: a genuine ~12h20m idle test
+ * (keep-alive ping disabled) found the actual cold start took roughly
+ * 95-105s. The "usually warm" framing was added once the keep-alive ping
+ * was confirmed actually firing on its own schedule (a real "Scheduled" run
+ * in the Actions tab, not just a manual workflow_dispatch), not before.
+ * Lives in the root layout, not a single page -- a shared link could point
+ * straight at /checkout or /simulator, not just Overview, so this needs to
+ * be visible regardless of which page a visitor lands on first.
  *
  * This is the calm, always-visible counterpart to the per-request "Waking
  * up the backend..." notices (components/ui/cold-start-notice.tsx) that
@@ -54,9 +57,9 @@ export function FreeTierBanner() {
     <div className="flex items-center justify-between gap-4 border-b border-border bg-surface-2 px-4 py-2 text-xs text-text-muted">
       <span className="flex items-center gap-2">
         <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
-        This demo runs on free-tier hosting (Render + Supabase) — after a period of inactivity, the
-        first request can take up to about two minutes while the backend spins back up. A hosting
-        characteristic, not a bug.
+        This demo runs on free-tier hosting (Render + Supabase) — a scheduled ping usually keeps
+        it warm, but an occasional first visit can still take up to a couple of minutes while the
+        backend spins back up. A hosting characteristic, not a bug.
       </span>
       <button
         type="button"
