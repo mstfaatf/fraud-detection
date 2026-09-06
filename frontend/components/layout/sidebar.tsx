@@ -13,6 +13,7 @@ const NAV_ITEMS = [
   { href: "/test-transaction", label: "Test a Transaction" },
   { href: "/simulator", label: "Simulator" },
   { href: "/checkout", label: "Checkout Demo" },
+  { href: "/about", label: "About" },
 ];
 
 export function Sidebar() {
