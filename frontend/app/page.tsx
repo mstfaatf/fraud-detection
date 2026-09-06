@@ -5,10 +5,11 @@ import { useState } from "react";
 
 import { PredictionsTable } from "@/components/predictions/predictions-table";
 import { Card } from "@/components/ui/card";
+import { LoadingOrColdStart } from "@/components/ui/cold-start-notice";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { StatTile } from "@/components/ui/stat-tile";
 import { POLL_INTERVAL_MS, RECENT_TRANSACTIONS_LIMIT } from "@/lib/constants";
-import { usePredictions } from "@/lib/hooks";
+import { usePredictions, useSlowLoading } from "@/lib/hooks";
 
 type TriState = "all" | "true" | "false";
 
@@ -44,6 +45,15 @@ export default function OverviewPage() {
 
   const hasAnyPredictions = total !== undefined && total > 0;
   const items = recentQuery.data?.items ?? [];
+
+  // Overview is the most likely first page a visitor lands on, so this is
+  // usually the first place a Render/Supabase free-tier cold start (see
+  // CLAUDE.md's "Free-tier cold-start mitigation" section) would show up.
+  // Any of these four requests still pending counts -- they all hit the
+  // same backend in parallel on mount.
+  const isSlow = useSlowLoading(
+    totalQuery.isLoading || fraudCountQuery.isLoading || anomalyCountQuery.isLoading || recentQuery.isLoading
+  );
 
   return (
     <div>
@@ -119,7 +129,9 @@ export default function OverviewPage() {
             at it?
           </div>
         ) : recentQuery.isLoading ? (
-          <div className="p-6 text-sm text-text-muted">Loading…</div>
+          <div className="p-6">
+            <LoadingOrColdStart slow={isSlow} />
+          </div>
         ) : !hasAnyPredictions ? (
           <div className="p-10 text-center">
             <p className="text-text">No transactions scored yet.</p>

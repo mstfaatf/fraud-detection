@@ -1,6 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 
 import {
   ApiError,
@@ -16,7 +17,7 @@ import {
   type SimulatorStartRequest,
   type TransactionInput,
 } from "./api";
-import { POLL_INTERVAL_MS } from "./constants";
+import { POLL_INTERVAL_MS, SLOW_REQUEST_THRESHOLD_MS } from "./constants";
 
 /** TanStack Query's default retries every failure (including a 404) up to 3
  * times with backoff -- fine for a flaky network blip, but it means a
@@ -26,6 +27,27 @@ import { POLL_INTERVAL_MS } from "./constants";
 function shouldRetry(failureCount: number, error: unknown): boolean {
   if (error instanceof ApiError && error.status >= 400 && error.status < 500) return false;
   return failureCount < 3;
+}
+
+/** True once `active` (an isLoading/isPending flag) has stayed true for at
+ * least SLOW_REQUEST_THRESHOLD_MS. Distinguishes ordinary brief loading from
+ * a request that's probably hitting Render/Supabase's free-tier cold start
+ * (backend spun down from idle, or Supabase's own pooler waking up) -- see
+ * CLAUDE.md's "Free-tier cold-start mitigation" section and
+ * components/ui/cold-start-notice.tsx, which this is meant to gate. */
+export function useSlowLoading(active: boolean, delayMs: number = SLOW_REQUEST_THRESHOLD_MS): boolean {
+  const [slow, setSlow] = useState(false);
+
+  useEffect(() => {
+    if (!active) {
+      setSlow(false);
+      return;
+    }
+    const timer = setTimeout(() => setSlow(true), delayMs);
+    return () => clearTimeout(timer);
+  }, [active, delayMs]);
+
+  return slow;
 }
 
 export function useHealth() {

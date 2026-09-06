@@ -4,10 +4,11 @@ import Link from "next/link";
 import { useState } from "react";
 
 import { Card } from "@/components/ui/card";
+import { ColdStartNotice } from "@/components/ui/cold-start-notice";
 import { StatTile } from "@/components/ui/stat-tile";
 import { describeApiError, type ScenarioWeights, type SimulatorStartRequest } from "@/lib/api";
 import { POLL_INTERVAL_MS } from "@/lib/constants";
-import { useSimulatorStatus, useStartSimulator, useStopSimulator } from "@/lib/hooks";
+import { useSimulatorStatus, useSlowLoading, useStartSimulator, useStopSimulator } from "@/lib/hooks";
 
 // Matches backend/app/schemas/simulator.py's SimulatorStartRequest bound
 // (rate_per_second: Field(gt=0, le=20)) -- a demo-scale safety cap, not a
@@ -45,6 +46,7 @@ export default function SimulatorPage() {
   const statusQuery = useSimulatorStatus();
   const startMutation = useStartSimulator();
   const stopMutation = useStopSimulator();
+  const isSlow = useSlowLoading(statusQuery.isLoading);
 
   const status = statusQuery.data;
   const running = status?.running ?? false;
@@ -103,6 +105,12 @@ export default function SimulatorPage() {
         </Card>
       ) : (
         <>
+          {statusQuery.isLoading && isSlow ? (
+            <Card className="mt-8">
+              <ColdStartNotice />
+            </Card>
+          ) : null}
+
           <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
             <StatTile
               label="Status"

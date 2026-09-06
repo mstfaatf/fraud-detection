@@ -5,12 +5,13 @@ import { useState, type FormEvent, type ReactNode } from "react";
 import { ShapBarChart } from "@/components/charts/shap-bar-chart";
 import { RiskBadge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { ColdStartNotice } from "@/components/ui/cold-start-notice";
 import { Legend, Row } from "@/components/ui/detail-row";
 import { ProbabilityGauge } from "@/components/ui/gauge";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { describeApiError, type PredictionResponse, type TransactionInput, type TransactionType } from "@/lib/api";
 import { formatProbability } from "@/lib/format";
-import { usePredictTransaction } from "@/lib/hooks";
+import { usePredictTransaction, useSlowLoading } from "@/lib/hooks";
 import { getFraudTier } from "@/lib/risk";
 
 const TRANSACTION_TYPES: TransactionType[] = ["CASH_IN", "CASH_OUT", "DEBIT", "PAYMENT", "TRANSFER"];
@@ -73,6 +74,7 @@ export default function TestTransactionPage() {
   const [result, setResult] = useState<PredictionResponse | null>(null);
   const [latencyMs, setLatencyMs] = useState<number | null>(null);
   const mutation = usePredictTransaction();
+  const isSlow = useSlowLoading(mutation.isPending);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -224,6 +226,7 @@ export default function TestTransactionPage() {
             >
               {mutation.isPending ? "Scoring…" : "Score transaction"}
             </button>
+            {isSlow ? <ColdStartNotice className="mt-2" /> : null}
           </form>
         </Card>
 

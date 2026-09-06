@@ -5,9 +5,10 @@ import { useEffect, useState } from "react";
 
 import { PredictionsTable } from "@/components/predictions/predictions-table";
 import { Card } from "@/components/ui/card";
+import { LoadingOrColdStart } from "@/components/ui/cold-start-notice";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { TRANSACTIONS_PAGE_SIZE } from "@/lib/constants";
-import { usePredictions } from "@/lib/hooks";
+import { usePredictions, useSlowLoading } from "@/lib/hooks";
 
 type TriState = "all" | "true" | "false";
 
@@ -31,6 +32,7 @@ export default function TransactionsPage() {
   const items = query.data?.items ?? [];
   const totalPages = total !== undefined ? Math.max(1, Math.ceil(total / TRANSACTIONS_PAGE_SIZE)) : undefined;
   const hasAnyPredictions = total !== undefined && total > 0;
+  const isSlow = useSlowLoading(query.isLoading);
 
   // A filter change (or the live poll finding fewer rows than before under
   // the current filter) can leave `page` pointing past the last real page --
@@ -100,7 +102,9 @@ export default function TransactionsPage() {
             it?
           </div>
         ) : query.isLoading ? (
-          <div className="p-6 text-sm text-text-muted">Loading…</div>
+          <div className="p-6">
+            <LoadingOrColdStart slow={isSlow} />
+          </div>
         ) : !hasAnyPredictions ? (
           <div className="p-10 text-center">
             <p className="text-text">No transactions scored yet.</p>

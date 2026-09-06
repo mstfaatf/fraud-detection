@@ -6,10 +6,11 @@ import { useRef, useState, type FormEvent } from "react";
 
 import { RiskBadge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { ColdStartNotice } from "@/components/ui/cold-start-notice";
 import { describeApiError, type PredictionListItem } from "@/lib/api";
 import { POLL_INTERVAL_MS } from "@/lib/constants";
 import { formatAmount, formatProbability } from "@/lib/format";
-import { useCreatePaymentIntent, usePredictions } from "@/lib/hooks";
+import { useCreatePaymentIntent, usePredictions, useSlowLoading } from "@/lib/hooks";
 import { getFraudTier } from "@/lib/risk";
 
 // loadStripe() is called once at module scope, not inside the component --
@@ -109,6 +110,7 @@ function AmountForm({ onCreated }: { onCreated: (session: CheckoutSession) => vo
   const [amount, setAmount] = useState(DEFAULT_AMOUNT);
   const [error, setError] = useState<string | null>(null);
   const mutation = useCreatePaymentIntent();
+  const isSlow = useSlowLoading(mutation.isPending);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -158,6 +160,7 @@ function AmountForm({ onCreated }: { onCreated: (session: CheckoutSession) => vo
         >
           {mutation.isPending ? "Creating PaymentIntent…" : "Continue to payment"}
         </button>
+        {isSlow ? <ColdStartNotice /> : null}
       </form>
     </Card>
   );

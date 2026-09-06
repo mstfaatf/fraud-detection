@@ -17,3 +17,12 @@ export const RECENT_TRANSACTIONS_LIMIT = 15;
  * cheap. Previous/Next controls, not numbered pages -- see the
  * Transactions page for why. */
 export const TRANSACTIONS_PAGE_SIZE = 25;
+
+/** How long a request has to stay pending before useSlowLoading (lib/hooks.ts)
+ * flags it as "probably a Render/Supabase free-tier cold start, not just
+ * normal network latency" -- see CLAUDE.md's cold-start section. Long enough
+ * that a normal warm request (well under 1s locally, well under this even
+ * against the deployed Supabase-backed instance -- see Phase 8's measured
+ * latencies) never trips it; short enough that a genuine cold start doesn't
+ * sit there looking blank/broken for very long before an explanation shows. */
+export const SLOW_REQUEST_THRESHOLD_MS = 3_000;

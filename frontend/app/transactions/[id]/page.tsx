@@ -5,20 +5,24 @@ import Link from "next/link";
 import { ShapBarChart } from "@/components/charts/shap-bar-chart";
 import { RiskBadge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { LoadingOrColdStart } from "@/components/ui/cold-start-notice";
 import { Legend, Row } from "@/components/ui/detail-row";
 import { ApiError } from "@/lib/api";
 import { formatAmount, formatProbability, formatTimestamp } from "@/lib/format";
-import { usePrediction } from "@/lib/hooks";
+import { usePrediction, useSlowLoading } from "@/lib/hooks";
 import { getFraudTier, getFraudTierLabel } from "@/lib/risk";
 
 export default function TransactionDetailPage({ params }: { params: { id: string } }) {
   const { data, isLoading, isError, error } = usePrediction(params.id);
+  const isSlow = useSlowLoading(isLoading);
 
   if (isLoading) {
     return (
       <div>
         <BackLink />
-        <p className="mt-6 text-text-muted">Loading transaction…</p>
+        <div className="mt-6">
+          <LoadingOrColdStart slow={isSlow} label="Loading transaction…" />
+        </div>
       </div>
     );
   }
