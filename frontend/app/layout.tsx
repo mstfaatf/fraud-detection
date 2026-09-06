@@ -42,9 +42,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="flex min-h-screen flex-col bg-bg font-sans text-text antialiased">
         <Providers>
           <FreeTierBanner />
-          <div className="flex min-h-0 flex-1">
+          <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
             <Sidebar />
-            <main className="flex-1 overflow-y-auto px-10 py-8">{children}</main>
+            <main className="flex-1 overflow-y-auto px-4 py-6 lg:px-10 lg:py-8">{children}</main>
           </div>
         </Providers>
       </body>
