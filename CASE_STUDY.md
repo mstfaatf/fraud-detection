@@ -105,7 +105,7 @@ the host against a local Postgres instance the whole way through, and Compose ha
 the live public deployment in either direction: Render runs the backend from a plain git checkout
 with no Docker involved at all, and Vercel builds the frontend from its own Git-connected pipeline.
 The Compose stack is hard-wired to always use its own local Postgres container rather than
-Supabase, specifically so it can never accidentally reach the production database. I'm stating this
+Supabase, specifically so it can never accidentally reach the production database. This is stated
 plainly rather than leaving it implied, because conflating "containerized and demoable" with "how
 this was actually built and deployed" would misrepresent both.
 
