@@ -41,6 +41,8 @@ The landing page: all-time stat tiles (transactions scored, fraud rate, anomaly 
 live-polling feed of the most recent predictions, filterable by fraud/anomaly status. Every row
 links through to a full SHAP breakdown for that transaction.
 
+![Transaction detail page with the full SHAP bar chart](docs/screenshots/transaction-detail-shap.png)
+
 ### Transactions
 
 ![Transactions page](docs/screenshots/transactions.png)
