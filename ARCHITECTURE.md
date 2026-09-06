@@ -25,8 +25,8 @@ each other, and a given run only ever uses one of them.
 flowchart TB
     subgraph local["Path 1: Local dev (the actual day-to-day loop)"]
         direction LR
-        L1["uvicorn --reload\n(backend/, host process)"]
-        L2["npm run dev\n(frontend/, host process)"]
+        L1["uvicorn --reload<br/>(backend/, host process)"]
+        L2["npm run dev<br/>(frontend/, host process)"]
         L3["Local or hosted Postgres"]
         L2 -->|HTTP :8000| L1
         L1 -->|SQLAlchemy| L3
@@ -34,18 +34,18 @@ flowchart TB
 
     subgraph compose["Path 2: Docker Compose (local convenience + containerization practice)"]
         direction LR
-        C1["backend container\n(backend/Dockerfile)"]
-        C2["frontend container\n(frontend/Dockerfile,\nNext standalone output)"]
-        C3["postgres container\n(postgres:16, named volume)"]
-        C2 -->|host-mapped\nlocalhost:8000\nsee note below| C1
-        C1 -->|service DNS\npostgres:5432| C3
+        C1["backend container<br/>(backend/Dockerfile)"]
+        C2["frontend container<br/>(frontend/Dockerfile,<br/>Next standalone output)"]
+        C3["postgres container<br/>(postgres:16, named volume)"]
+        C2 -->|host-mapped<br/>localhost:8000<br/>see note below| C1
+        C1 -->|service DNS<br/>postgres:5432| C3
     end
 
     subgraph live["Path 3: Live public deployment"]
         direction LR
-        V["Vercel\n(Next.js frontend,\nGit-connected build)"]
-        R["Render\n(FastAPI backend,\nplain git checkout,\nno Docker)"]
-        S["Supabase Postgres\n(Transaction pooler\nfor app runtime,\nSession pooler\nfor migrations)"]
+        V["Vercel<br/>(Next.js frontend,<br/>Git-connected build)"]
+        R["Render<br/>(FastAPI backend,<br/>plain git checkout,<br/>no Docker)"]
+        S["Supabase Postgres<br/>(Transaction pooler<br/>for app runtime,<br/>Session pooler<br/>for migrations)"]
         V -->|HTTPS| R
         R -->|SQLAlchemy| S
     end
@@ -80,17 +80,17 @@ exist in the schema at all.
 
 ```mermaid
 flowchart TD
-    A["Client POSTs TransactionInput\n(step, type, amount,\noldbalanceOrg, oldbalanceDest, nameDest)"]
-    B["Pydantic schema validation\n(schemas/prediction.py)\ninvalid/missing/out-of-range -> 422"]
-    C["preprocessing.build_features()\n(ml/src/preprocessing.py -- the SAME\nfunction training used, not a\nreimplementation)"]
-    D["XGBoost predict_proba\n(app/ml/model_loader.py's\nloaded-once-at-startup model)"]
-    E["Threshold comparison\n(~0.6145, read from\nmodel_metadata.json)\n-> is_fraud"]
-    F["Isolation Forest score_samples\n(independent path, runs regardless\nof the XGBoost decision --\nADVISORY ONLY: 0% unique-catch\nprecision in evaluation;\nnever blended into fraud_probability)"]
-    G["SHAP TreeExplainer.shap_values()\n(reconstructed fresh at startup,\nnever unpickled -- see\napp/ml/explainer.py)"]
-    H["PredictionResponse assembled\n(fraud_probability, is_fraud,\nanomaly_flag/score, top-5 SHAP,\nmodel_version)"]
+    A["Client POSTs TransactionInput<br/>(step, type, amount,<br/>oldbalanceOrg, oldbalanceDest, nameDest)"]
+    B["Pydantic schema validation<br/>(schemas/prediction.py)<br/>invalid/missing/out-of-range -> 422"]
+    C["preprocessing.build_features()<br/>(ml/src/preprocessing.py -- the SAME<br/>function training used, not a<br/>reimplementation)"]
+    D["XGBoost predict_proba<br/>(app/ml/model_loader.py's<br/>loaded-once-at-startup model)"]
+    E["Threshold comparison<br/>(~0.6145, read from<br/>model_metadata.json)<br/>-> is_fraud"]
+    F["Isolation Forest score_samples<br/>(independent path, runs regardless<br/>of the XGBoost decision --<br/>ADVISORY ONLY: 0% unique-catch<br/>precision in evaluation;<br/>never blended into fraud_probability)"]
+    G["SHAP TreeExplainer.shap_values()<br/>(reconstructed fresh at startup,<br/>never unpickled -- see<br/>app/ml/explainer.py)"]
+    H["PredictionResponse assembled<br/>(fraud_probability, is_fraud,<br/>anomaly_flag/score, top-5 SHAP,<br/>model_version)"]
     I["Response returned to caller"]
-    J["Synchronous persistence\n(prediction_service._persist_prediction)\none Transaction row + one linked\nPrediction row (full, uncapped SHAP\nlist stored, not just the top 5)"]
-    K[("Postgres:\ntransactions + predictions tables")]
+    J["Synchronous persistence<br/>(prediction_service._persist_prediction)<br/>one Transaction row + one linked<br/>Prediction row (full, uncapped SHAP<br/>list stored, not just the top 5)"]
+    K[("Postgres:<br/>transactions + predictions tables")]
 
     A --> B --> C --> D --> E
     E --> F
@@ -119,16 +119,16 @@ function `/predict` uses, adapted from Stripe's schema to this model's PaySim-sh
 
 ```mermaid
 flowchart TD
-    A["Stripe fires payment_intent.created\n(at PaymentIntent CREATION time,\nnot confirm/succeeded --\nscoring must happen before\nthe payment can be stopped)"]
+    A["Stripe fires payment_intent.created<br/>(at PaymentIntent CREATION time,<br/>not confirm/succeeded --<br/>scoring must happen before<br/>the payment can be stopped)"]
     B["POST /webhooks/stripe receives event"]
-    C["Signature verification\n(stripe.Webhook.construct_event\nagainst the RAW body + webhook secret)\nmandatory -- bad/missing signature -> 400,\nnothing scored or persisted"]
-    D["stripe_adapter.py maps the\nPaymentIntent -> TransactionInput\n(documented simplifications:\nsynthetic wallet balance in Customer\nmetadata as oldbalanceOrg, fixed\noldbalanceDest/type/is_merchant_dest,\ncents->dollars, epoch-derived step --\nsee stripe_adapter.py's own docstring\nfor the full reasoning, not repeated here)"]
-    E["predict_transaction()\n(the SAME function POST /predict calls --\nan in-process call, never a loopback\nHTTP request back into this app)"]
+    C["Signature verification<br/>(stripe.Webhook.construct_event<br/>against the RAW body + webhook secret)<br/>mandatory -- bad/missing signature -> 400,<br/>nothing scored or persisted"]
+    D["stripe_adapter.py maps the<br/>PaymentIntent -> TransactionInput<br/>(documented simplifications:<br/>synthetic wallet balance in Customer<br/>metadata as oldbalanceOrg, fixed<br/>oldbalanceDest/type/is_merchant_dest,<br/>cents->dollars, epoch-derived step --<br/>see stripe_adapter.py's own docstring<br/>for the full reasoning, not repeated here)"]
+    E["predict_transaction()<br/>(the SAME function POST /predict calls --<br/>an in-process call, never a loopback<br/>HTTP request back into this app)"]
     F{"is_fraud?"}
-    G["stripe.PaymentIntent.cancel(...)\na real Stripe API call --\nprevents this PaymentIntent from\never being confirmed"]
-    H["No action -- payment proceeds\nto confirmation normally"]
-    I["Persistence: one Transaction +\none Prediction row,\nsource = \"stripe_test\"\n(distinguishes this path from\nsource = \"paysim_sim\")"]
-    J["200 returned to Stripe\n(always 200 on ML outage too --\na deliberate divergence from\n/predict's 503, since Stripe\nretry-storms any non-2xx)"]
+    G["stripe.PaymentIntent.cancel(...)<br/>a real Stripe API call --<br/>prevents this PaymentIntent from<br/>ever being confirmed"]
+    H["No action -- payment proceeds<br/>to confirmation normally"]
+    I["Persistence: one Transaction +<br/>one Prediction row,<br/>source = 'stripe_test'<br/>(distinguishes this path from<br/>source = 'paysim_sim')"]
+    J["200 returned to Stripe<br/>(always 200 on ML outage too --<br/>a deliberate divergence from<br/>/predict's 503, since Stripe<br/>retry-storms any non-2xx)"]
 
     A --> B --> C --> D --> E --> F
     F -->|yes| G --> I
