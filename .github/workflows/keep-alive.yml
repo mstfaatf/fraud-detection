@@ -25,6 +25,16 @@ name: Keep-alive ping
 # section for the result (a real cold start took ~95-105s, meaningfully
 # longer than this project's prior 20-50s estimate, which has been updated
 # accordingly). Restored below; back to its normal schedule.
+#
+# No-op touch (2026-09-06, later same day): after restoring the schedule
+# above, several hours passed with zero scheduled runs in Actions history --
+# only the one manual workflow_dispatch run showed up. YAML syntax, the
+# workflow's enabled status, and repo Actions permissions were all confirmed
+# correct; main is the default branch. This matches a known GitHub quirk
+# where the scheduler needs the workflow file force-touched (any content
+# change, committed and pushed) to re-register a schedule trigger -- this
+# comment block is that touch. See CLAUDE.md's Known Limitations for the
+# follow-up on whether this actually got a scheduled run firing.
 on:
   schedule:
     - cron: "*/10 * * * *"
