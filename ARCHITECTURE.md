@@ -1,9 +1,8 @@
 # Architecture
 
 A map of how this system fits together — how it runs, how a transaction actually flows through
-it, and where each piece of code lives. For the full decision log (why each choice was made, what
-was tried and rejected, every measured result) see [CLAUDE.md](./CLAUDE.md); this document is the
-mental model, not the history.
+it, and where each piece of code lives. This is the mental model, not the full decision log behind
+every choice.
 
 ## Why a modular monolith, not microservices
 
@@ -63,8 +62,10 @@ flowchart TB
   *browser* — so that URL must be the backend's host-mapped address (`http://localhost:8000`), not
   Compose's internal service DNS (`http://backend:8000`), even though the latter looks like the
   "obviously correct" answer. Migrations here are a deliberate manual step
-  (`docker compose exec backend alembic upgrade head`), not an auto-run entrypoint — see
-  CLAUDE.md's Phase 11 notes for the production incident that motivated that choice.
+  (`docker compose exec backend alembic upgrade head`), not an auto-run entrypoint — a choice made
+  after a real migration-lag incident on this project's live deployment, where a schema change
+  that shipped without a corresponding manual migration run silently broke production reads and
+  writes until it was caught and fixed.
 - **Path 3 (live deployment)** is the actual public demo: Vercel builds the frontend directly from
   its Git-connected pipeline, Render runs the backend from a plain `git clone` +
   `pip install` (no Docker involved at all), and both talk to a real Supabase Postgres instance —
@@ -75,8 +76,8 @@ flowchart TB
 ## Request data flow — `POST /predict`
 
 The core real-time path: a transaction is scored *before* it executes, using only fields that
-would actually be available at that point in time (see CLAUDE.md's Feature Schema section for why
-that constraint drives which fields exist at all).
+would actually be available at that point in time — that constraint is what decides which fields
+exist in the schema at all.
 
 ```mermaid
 flowchart TD
@@ -122,7 +123,7 @@ flowchart TD
     A["Stripe fires payment_intent.created\n(at PaymentIntent CREATION time,\nnot confirm/succeeded --\nscoring must happen before\nthe payment can be stopped)"]
     B["POST /webhooks/stripe receives event"]
     C["Signature verification\n(stripe.Webhook.construct_event\nagainst the RAW body + webhook secret)\nmandatory -- bad/missing signature -> 400,\nnothing scored or persisted"]
-    D["stripe_adapter.py maps the\nPaymentIntent -> TransactionInput\n(documented simplifications:\nsynthetic wallet balance in Customer\nmetadata as oldbalanceOrg, fixed\noldbalanceDest/type/is_merchant_dest,\ncents->dollars, epoch-derived step --\nsee stripe_adapter.py's own docstring\nand CLAUDE.md's Phase 9 wrap-up\nfor the full reasoning, not repeated here)"]
+    D["stripe_adapter.py maps the\nPaymentIntent -> TransactionInput\n(documented simplifications:\nsynthetic wallet balance in Customer\nmetadata as oldbalanceOrg, fixed\noldbalanceDest/type/is_merchant_dest,\ncents->dollars, epoch-derived step --\nsee stripe_adapter.py's own docstring\nfor the full reasoning, not repeated here)"]
     E["predict_transaction()\n(the SAME function POST /predict calls --\nan in-process call, never a loopback\nHTTP request back into this app)"]
     F{"is_fraud?"}
     G["stripe.PaymentIntent.cancel(...)\na real Stripe API call --\nprevents this PaymentIntent from\never being confirmed"]

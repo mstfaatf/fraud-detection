@@ -250,7 +250,7 @@ function PaymentPanel({ session, onStartOver }: { session: CheckoutSession; onSt
           <span className="font-mono text-text">{formatAmount(session.walletBalance)}</span>. This
           project&apos;s dominant fraud signal is a <em>narrow</em> band right at{" "}
           <code className="font-mono">amount == balance</code> (the same PaySim account-draining
-          pattern documented on Overview/CLAUDE.md) — a few percent off in either direction and the
+          pattern documented on Overview) — a few percent off in either direction and the
           signal collapses. Enter the exact balance above to give the model a real (not
           guaranteed — it also depends on the current time of day, a genuine model
           characteristic, not a demo bug) chance of blocking it; any other amount is treated as

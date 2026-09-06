@@ -207,7 +207,7 @@ export default function SimulatorPage() {
                   fires a burst of several rapid transactions to demonstrate how the live feed
                   behaves under bursty conditions. The trained model has no account-history or
                   velocity features (PaySim has far too little repeat-customer data to train that
-                  on — see CLAUDE.md) and scores every transaction in the burst completely
+                  on) and scores every transaction in the burst completely
                   independently. This is a dashboard/UI illustration only, not a fraud pattern the
                   model detects.
                 </div>

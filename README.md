@@ -10,8 +10,7 @@ for demonstrating real engineering practice (time-based train/test splits, leaka
 design, model explainability, an honest accounting of the dataset's limits) over handling
 real-world scale.
 
-See **[ARCHITECTURE.md](./ARCHITECTURE.md)** for a system diagram and how the pieces fit together,
-and **[CLAUDE.md](./CLAUDE.md)** for the full phase-by-phase decision log.
+See **[ARCHITECTURE.md](./ARCHITECTURE.md)** for a system diagram and how the pieces fit together.
 
 ## Live Demo
 
@@ -22,7 +21,7 @@ and **[CLAUDE.md](./CLAUDE.md)** for the full phase-by-phase decision log.
 > (confirmed firing on its own schedule, not just manually) usually keeps it warm, but an
 > occasional first visit can still take up to a couple of minutes while the backend spins back up
 > — that's a hosting characteristic, not a bug (a real overnight-idle test measured a cold start
-> directly at roughly 95–105 seconds with the keep-alive deliberately disabled; see CLAUDE.md). The
+> directly at roughly 95–105 seconds with the keep-alive deliberately disabled). The
 > site itself explains this if you hit it (a dismissible banner, and a "waking up the backend…"
 > status in place of a blank screen on any request that's taking a while).
 
@@ -100,14 +99,12 @@ it has **no connection to the live deployment** above (Render/Vercel/Supabase bu
 independently of Docker entirely). Verified working end to end from a clean state: all three
 containers build and pass their healthchecks, migrations apply cleanly against the container's own
 Postgres, and a transaction submitted through the containerized frontend is scored by the
-containerized backend and persisted to the containerized database — see CLAUDE.md for the full
-verification writeup. Full instructions, including the (small, Supabase-free) env var setup, are in
-SETUP.md's "Docker Compose (full stack)" section.
+containerized backend and persisted to the containerized database. Full instructions, including
+the (small, Supabase-free) env var setup, are in SETUP.md's "Docker Compose (full stack)" section.
 
 ## Known Limitations
 
-Pulled from this project's own decision log, not reinvented here — see the link below for the
-full reasoning behind each:
+Pulled from this project's own decision log, not reinvented here:
 
 - **Synthetic data, not real transactions.** The model is trained entirely on PaySim, a simulated
   dataset — chosen specifically because its fields are interpretable (real amounts and balances,
@@ -128,9 +125,6 @@ full reasoning behind each:
 - **Isolation Forest is a secondary, non-blocking signal.** In evaluation it added zero unique
   fraud catches beyond XGBoost on this dataset (PaySim's fraud only has one generation pattern) —
   it's surfaced as a separate "anomaly" flag and never blended into the fraud decision.
-
-For the full decision log — every EDA finding, model comparison, and architecture tradeoff behind
-this project, phase by phase — see **[CLAUDE.md](./CLAUDE.md)**.
 
 Local development setup (Python/Node environments, database, Stripe test keys) is covered in
 [SETUP.md](./SETUP.md).

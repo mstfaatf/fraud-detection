@@ -109,9 +109,9 @@ real values; `.env` itself is gitignored.
 ## Database (Postgres + Alembic)
 
 Local dev targets a **Docker Postgres container** (`docker-compose.yml`, `postgres` service) —
-Docker is used here for the database only, not for running the backend/frontend themselves (see
-`CLAUDE.md` → "Development Workflow"). The public/live demo instead targets a hosted **Supabase**
-Postgres project, reusing this exact same schema and migrations.
+Docker is used here for the database only, not for running the backend/frontend themselves. The
+public/live demo instead targets a hosted **Supabase** Postgres project, reusing this exact same
+schema and migrations.
 
 ### 1. Start local Postgres
 
@@ -258,16 +258,17 @@ then `up --build`): all three containers built, started, and passed their health
 genuinely empty Postgres (confirmed directly via `psql \dt`, not just Alembic's exit code); and a
 transaction submitted through the containerized frontend at `localhost:3000` was scored by the
 containerized backend and persisted to the containerized database (confirmed via `GET /predictions`
-and a direct `psql` query). Full write-up, including one real bug this verification caught and
-fixed (`alembic.ini`/`alembic/` weren't in the backend image at all), is in CLAUDE.md.
+and a direct `psql` query). One real bug this verification caught and fixed:
+`alembic.ini`/`alembic/` weren't in the backend image at all, so the migration command above
+failed until both were added to the Dockerfile's `COPY` steps.
 
 ## Stripe (test mode)
 
 The Stripe adapter (`backend/app/services/stripe_adapter.py`) maps a Stripe PaymentIntent onto the
 model's `TransactionInput` schema, and `POST /webhooks/stripe` (`backend/app/api/
 stripe_webhooks.py`) uses it to score a real (test-mode, sandboxed) Stripe payment in real time and
-cancel it if the model flags it as fraud — see CLAUDE.md's Phase 9 write-up for the full adapter
-simplifications and webhook contract. **Test-mode keys only** — sandboxed by Stripe, no real money
+cancel it if the model flags it as fraud — see `stripe_adapter.py`'s own docstring for the full
+adapter simplifications and webhook contract. **Test-mode keys only** — sandboxed by Stripe, no real money
 ever moves, and this project has no reason to hold a live-mode key at all.
 
 Add these to `.env` (repo root, gitignored — key names only, get the real values from your own
@@ -322,7 +323,7 @@ session.
    PaymentIntent, so it will essentially always score as legitimate — to see a real cancellation,
    create a PaymentIntent directly via the API instead, attached to a customer whose seeded
    `wallet_balance` metadata equals the PaymentIntent's own `amount` (the model's core
-   draining-pattern fraud signature — see CLAUDE.md).
+   draining-pattern fraud signature).
 5. Check the result three ways: the HTTP status `stripe listen` printed for the event, the
    `transactions`/`predictions` rows written with `source = 'stripe_test'` (`docker exec
    fraud-detection-postgres psql -U fraud -d fraud_detection -c "SELECT ... WHERE source =
@@ -345,5 +346,4 @@ bash scripts/run_eda.sh
 bash scripts/run_tests.sh
 ```
 
-See `CLAUDE.md` → "Important Commands" for the full reference. For the alternative full-stack
-Docker Compose path, see "Running Locally: Two Paths" above.
+For the alternative full-stack Docker Compose path, see "Running Locally: Two Paths" above.
