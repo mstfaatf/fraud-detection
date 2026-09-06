@@ -21,7 +21,18 @@
 # backend/Dockerfile}` for the same reason.
 
 # ---- Build stage: compile/install Python dependencies into a venv ----
-FROM python:3.12.7-slim AS builder
+# `3.12-slim-bookworm` (floating patch within Debian 12/bookworm), not the
+# originally-pinned `3.12.7-slim` -- a security audit (SECURITY_AUDIT.md)
+# found the pinned tag's underlying Debian package set had accumulated a
+# meaningful number of OS-level CVEs since it was first pulled (trivy: 9
+# critical/94 high on the base image alone), and a same-OS-major, same-
+# Python-minor bump to a newer bookworm point release cut that to 5/55
+# with no compatibility risk (still Debian 12, still Python 3.12.x) -- a
+# full-major-version float (`python:3.12-slim`, now Debian 13/trixie) was
+# considered and deliberately rejected as too large a jump for this fix.
+# This floats forward on every rebuild rather than re-pinning a new exact
+# patch, since re-stalening is exactly the problem being fixed here.
+FROM python:3.12-slim-bookworm AS builder
 
 # build-essential + python3-dev cover any dependency that doesn't ship a
 # prebuilt wheel for this platform. Confirmed empirically (see CLAUDE.md) that
@@ -44,7 +55,7 @@ RUN pip install --no-cache-dir --upgrade pip \
     && pip install --no-cache-dir -r requirements.txt
 
 # ---- Runtime stage: slim image, no compilers, non-root user ----
-FROM python:3.12.7-slim AS runtime
+FROM python:3.12-slim-bookworm AS runtime
 
 WORKDIR /app
 

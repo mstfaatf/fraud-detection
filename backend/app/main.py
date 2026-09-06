@@ -101,6 +101,22 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.middleware("http")
+async def _security_headers(request: Request, call_next):
+    # Lightweight, demo-proportional hardening -- not a full CSP (Stripe
+    # Elements' cross-origin iframe plus this app's own inline-style-free
+    # Tailwind setup would need a carefully-tuned policy to avoid breaking
+    # the checkout flow, which is over-engineering for a portfolio API with
+    # no user accounts/sessions to protect). These three are cheap, have no
+    # functional downside for a pure JSON API, and close the standard
+    # nosniff/clickjacking/referrer-leak gaps a security review would flag.
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    return response
+
+
 app.include_router(health_router)
 app.include_router(predict_router)
 app.include_router(predictions_router)

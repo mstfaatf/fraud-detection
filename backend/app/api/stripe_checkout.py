@@ -25,13 +25,23 @@ second, different demo customer for the same checkout attempt.
 from __future__ import annotations
 
 import stripe
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.core.config import settings
+from app.core.limiter import limiter
 from app.schemas.stripe_checkout import CreatePaymentIntentRequest, CreatePaymentIntentResponse
 from app.services.stripe_adapter import extract_wallet_balance, get_or_create_demo_customer
 
 router = APIRouter()
+
+# Each call makes a real Stripe API call (creating a real Customer/
+# PaymentIntent object, even in test mode) and, once the resulting
+# `payment_intent.created` webhook lands, a real DB write -- unauthenticated
+# and public, so a security review flagged this as needing the same kind of
+# bound /predict already has (see SECURITY_AUDIT.md). 10/minute is generous
+# for a human clicking through the checkout demo, tight enough to bound an
+# automated spam loop against this project's own Stripe test-mode account.
+_CREATE_PAYMENT_INTENT_RATE_LIMIT = "10/minute"
 
 # Overrides stripe_adapter.DEFAULT_WALLET_SEED_BALANCE ($50,000) for this one
 # call site only. Measured live (see CLAUDE.md's Phase 9 part 3): the
@@ -48,7 +58,10 @@ CHECKOUT_DEMO_WALLET_SEED_BALANCE = 1_000_000.0
 
 
 @router.post("/create-payment-intent", response_model=CreatePaymentIntentResponse)
-def create_payment_intent(payload: CreatePaymentIntentRequest) -> CreatePaymentIntentResponse:
+@limiter.limit(_CREATE_PAYMENT_INTENT_RATE_LIMIT)
+def create_payment_intent(
+    payload: CreatePaymentIntentRequest, request: Request, response: Response
+) -> CreatePaymentIntentResponse:
     if not settings.stripe_secret_key:
         raise HTTPException(status_code=503, detail="Stripe is not configured (STRIPE_SECRET_KEY unset)")
 

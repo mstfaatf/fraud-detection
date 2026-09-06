@@ -44,6 +44,7 @@ class TransactionInput(BaseModel):
     oldbalanceDest: float = Field(ge=0, description="Destination account balance before this transaction.")
     nameDest: str = Field(
         min_length=1,
+        max_length=255,
         description="Destination account id. PaySim merchant accounts start with 'M' -- used to derive is_merchant_dest.",
     )
 
