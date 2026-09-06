@@ -90,10 +90,10 @@ isolated ML demo running on the side.
 
 Two ways to run this, for two different purposes:
 
-**1. Daily dev (recommended):** `uvicorn --reload` + `npm run dev` + a local Postgres. I used this
-to build and test every phase of this project: fastest iteration, live reload on both backend and
-frontend, and no rebuild step between a code change and seeing it run. Full command-by-command
-setup is in [SETUP.md](./SETUP.md).
+**1. Daily dev (recommended):** `uvicorn --reload` + `npm run dev` + a local Postgres. This is how I
+built and tested the whole project: fastest iteration, live reload on both backend and frontend,
+and no rebuild step between a code change and seeing it run. Full command-by-command setup is in
+[SETUP.md](./SETUP.md).
 
 **2. Full-stack Docker Compose:** `docker compose up -d --build`, then
 `docker compose exec backend alembic upgrade head` once to create the schema. This runs the whole

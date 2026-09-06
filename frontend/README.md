@@ -10,12 +10,12 @@ npm install
 npm run dev
 ```
 
-Requires the FastAPI backend (`backend/`) running separately -- see the root `SETUP.md`.
+Requires the FastAPI backend (`backend/`) running separately. See the root `SETUP.md`.
 
 ## Pages
 
-- `/` -- Overview
-- `/transactions` -- Transactions
-- `/test-transaction` -- Test a Transaction
+- `/`: Overview
+- `/transactions`: Transactions
+- `/test-transaction`: Test a Transaction
 
-Skeleton only as of the initial scaffold -- real page content comes next.
+Skeleton only as of the initial scaffold. Real page content comes next.
