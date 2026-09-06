@@ -204,6 +204,37 @@ docker exec fraud-detection-postgres psql "<SUPABASE_DIRECT_URL or Session poole
 
 should list `transactions`, `predictions`, and `alembic_version` in both.
 
+## Docker Compose (full stack)
+
+A single `docker compose up` runs the entire stack (Postgres + FastAPI + Next.js) reproducibly,
+self-contained against its own local Postgres -- never Supabase. This is a packaging/
+containerization deliverable, not the day-to-day dev loop (see "Running things day-to-day" below
+for that).
+
+```bash
+docker compose up -d --build
+
+# First time only (and again whenever a new Alembic migration file is added --
+# see docker-compose.yml's comment above the `backend` service for why this
+# is a manual step, not automatic):
+docker compose exec backend alembic upgrade head
+```
+
+- Backend: http://localhost:8000 (`/health`, `/predict`, etc.)
+- Frontend: http://localhost:3000
+- Postgres: `localhost:5432` (same `fraud`/`fraud`/`fraud_detection` credentials as local dev)
+
+Stripe is optional here: if the repo-root `.env` has real `STRIPE_*` test-mode keys set (see
+"Stripe (test mode)" below), the backend and frontend containers both pick them up automatically;
+if not, Stripe-dependent endpoints return a clean 503 instead of erroring, same as local dev
+without Stripe configured. No other env vars need to be set for this stack to run -- see
+`.env.example`'s "Docker Compose" section for exactly what is and isn't read from `.env` here.
+
+```bash
+docker compose down          # stop, keep the postgres_data volume (data persists)
+docker compose down -v       # stop and delete the volume (fresh database next time)
+```
+
 ## Stripe (test mode)
 
 The Stripe adapter (`backend/app/services/stripe_adapter.py`) maps a Stripe PaymentIntent onto the
