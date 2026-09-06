@@ -26,6 +26,9 @@ and **[CLAUDE.md](./CLAUDE.md)** for the full phase-by-phase decision log.
 > site itself explains this if you hit it (a dismissible banner, and a "waking up the backend…"
 > status in place of a blank screen on any request that's taking a while).
 
+See **[CASE_STUDY.md](./CASE_STUDY.md)** for a focused write-up of this project's key technical
+decisions and results.
+
 ## Feature Walkthrough
 
 ### Overview
