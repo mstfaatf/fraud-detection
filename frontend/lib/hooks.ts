@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
   ApiError,
+  createPaymentIntent,
   getHealth,
   getPrediction,
   getPredictions,
@@ -100,5 +101,17 @@ export function useStopSimulator() {
     onSuccess: (status) => {
       queryClient.setQueryData(["simulator-status"], status);
     },
+  });
+}
+
+/** Creates a real Stripe PaymentIntent server-side (POST
+ * /create-payment-intent) for the checkout demo. Scoring/gating happens
+ * later, asynchronously, once Stripe delivers the resulting
+ * payment_intent.created webhook back to POST /webhooks/stripe -- this
+ * mutation only gets the checkout page as far as having a client_secret to
+ * mount Stripe Elements with. */
+export function useCreatePaymentIntent() {
+  return useMutation({
+    mutationFn: (amount: number) => createPaymentIntent(amount),
   });
 }

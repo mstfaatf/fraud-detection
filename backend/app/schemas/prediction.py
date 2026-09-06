@@ -94,6 +94,9 @@ class PredictionListItem(BaseModel):
     oldbalanceOrg: float
     oldbalanceDest: float
     is_merchant_dest: bool
+    # "paysim_sim" (simulator / POST /predict / Test a Transaction) or
+    # "stripe_test" (POST /webhooks/stripe) -- see CLAUDE.md's Phase 9 part 2.
+    source: str
 
     # Prediction output fields.
     fraud_probability: float

@@ -37,6 +37,7 @@ def _list_item_from_row(transaction: Transaction, prediction: Prediction) -> Pre
         oldbalanceOrg=transaction.oldbalanceOrg,
         oldbalanceDest=transaction.oldbalanceDest,
         is_merchant_dest=transaction.is_merchant_dest,
+        source=transaction.source,
         fraud_probability=prediction.fraud_probability,
         is_fraud=prediction.is_fraud,
         anomaly_flag=prediction.anomaly_flag,
@@ -53,6 +54,7 @@ def list_predictions(
     offset: int = 0,
     is_fraud: bool | None = None,
     anomaly_flag: bool | None = None,
+    source: str | None = None,
 ) -> PredictionListResponse:
     limit = min(limit, MAX_LIMIT)
 
@@ -61,6 +63,8 @@ def list_predictions(
         base_query = base_query.where(Prediction.is_fraud == is_fraud)
     if anomaly_flag is not None:
         base_query = base_query.where(Prediction.anomaly_flag == anomaly_flag)
+    if source is not None:
+        base_query = base_query.where(Transaction.source == source)
 
     total = db.scalar(select(func.count()).select_from(base_query.subquery())) or 0
 

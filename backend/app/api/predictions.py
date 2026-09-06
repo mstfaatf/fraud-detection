@@ -30,9 +30,12 @@ def get_predictions(
     offset: int = Query(0, ge=0),
     is_fraud: bool | None = Query(None),
     anomaly_flag: bool | None = Query(None),
+    source: str | None = Query(None, description="Filter by transaction source, e.g. 'stripe_test'."),
     db: Session = Depends(get_db),
 ) -> PredictionListResponse:
-    return list_predictions(db, limit=limit, offset=offset, is_fraud=is_fraud, anomaly_flag=anomaly_flag)
+    return list_predictions(
+        db, limit=limit, offset=offset, is_fraud=is_fraud, anomaly_flag=anomaly_flag, source=source
+    )
 
 
 @router.get("/predictions/{prediction_id}", response_model=PredictionDetail)

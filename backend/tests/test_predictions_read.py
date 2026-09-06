@@ -113,6 +113,9 @@ def test_list_includes_seeded_rows_with_joined_shape(client, seeded):
     assert legit_item["oldbalanceOrg"] == READ_TEST_LEGIT_PAYLOAD["oldbalanceOrg"]
     assert legit_item["oldbalanceDest"] == READ_TEST_LEGIT_PAYLOAD["oldbalanceDest"]
     assert legit_item["is_merchant_dest"] is True  # nameDest starts with "M"
+    # Everything scored through POST /predict is "paysim_sim" -- see
+    # CLAUDE.md's Phase 9 part 2 ("source" column / stripe_test).
+    assert legit_item["source"] == "paysim_sim"
 
     # Prediction fields, matching the POST /predict response for the same row.
     assert fraud_item["fraud_probability"] == pytest.approx(
@@ -156,6 +159,20 @@ def test_list_respects_anomaly_flag_filter(client, seeded):
     data = response.json()
     assert seeded["fraud"]["id"] in {item["id"] for item in data["items"]}
     assert all(item["anomaly_flag"] == target_flag for item in data["items"])
+
+
+def test_list_respects_source_filter(client, seeded):
+    response = client.get("/predictions", params={"source": "paysim_sim", "limit": 200})
+
+    assert response.status_code == 200
+    data = response.json()
+    ids = {item["id"] for item in data["items"]}
+    assert seeded["legit"]["id"] in ids
+    assert seeded["fraud"]["id"] in ids
+    assert all(item["source"] == "paysim_sim" for item in data["items"])
+
+    no_match = client.get("/predictions", params={"source": "stripe_test", "limit": 200}).json()
+    assert seeded["legit"]["id"] not in {item["id"] for item in no_match["items"]}
 
 
 def test_list_pagination_limit_and_offset(client, seeded):

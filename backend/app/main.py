@@ -14,6 +14,7 @@ from app.api.health import router as health_router
 from app.api.predict import router as predict_router
 from app.api.predictions import router as predictions_router
 from app.api.simulator import router as simulator_router
+from app.api.stripe_checkout import router as stripe_checkout_router
 from app.api.stripe_webhooks import router as stripe_webhooks_router
 from app.core.config import settings
 from app.core.limiter import limiter
@@ -104,4 +105,5 @@ app.include_router(health_router)
 app.include_router(predict_router)
 app.include_router(predictions_router)
 app.include_router(simulator_router)
+app.include_router(stripe_checkout_router)
 app.include_router(stripe_webhooks_router)

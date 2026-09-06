@@ -10,6 +10,8 @@
  *   - HealthResponse -> backend/app/api/health.py
  *   - ScenarioWeights / SimulatorStartRequest / SimulatorStatus
  *       -> backend/app/schemas/simulator.py + backend/app/api/simulator.py
+ *   - CreatePaymentIntentResponse
+ *       -> backend/app/schemas/stripe_checkout.py + backend/app/api/stripe_checkout.py
  */
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
@@ -57,6 +59,9 @@ export interface PredictionListItem {
   oldbalanceOrg: number;
   oldbalanceDest: number;
   is_merchant_dest: boolean;
+  /** "paysim_sim" (simulator / POST /predict / Test a Transaction) or
+   * "stripe_test" (the checkout demo, via POST /webhooks/stripe). */
+  source: string;
   fraud_probability: number;
   is_fraud: boolean;
   anomaly_flag: boolean;
@@ -83,6 +88,7 @@ export interface PredictionListParams {
   offset?: number;
   is_fraud?: boolean;
   anomaly_flag?: boolean;
+  source?: string;
 }
 
 export interface HealthResponse {
@@ -114,6 +120,18 @@ export interface SimulatorStatus {
   transactions_generated: number;
   started_at: string | null;
   uptime_seconds: number | null;
+}
+
+/** POST /create-payment-intent response -- see
+ * backend/app/schemas/stripe_checkout.py. `wallet_balance` is the checkout
+ * demo's synthetic Stripe Customer wallet balance (stripe_adapter.py's
+ * stand-in for oldbalanceOrg), surfaced so the page can explain, with the
+ * real number, why a given amount does or doesn't look like PaySim's
+ * draining-pattern fraud signature. */
+export interface CreatePaymentIntentResponse {
+  client_secret: string;
+  payment_intent_id: string;
+  wallet_balance: number;
 }
 
 export class ApiError extends Error {
@@ -157,6 +175,7 @@ export function getPredictions(params: PredictionListParams = {}): Promise<Predi
   if (params.offset !== undefined) search.set("offset", String(params.offset));
   if (params.is_fraud !== undefined) search.set("is_fraud", String(params.is_fraud));
   if (params.anomaly_flag !== undefined) search.set("anomaly_flag", String(params.anomaly_flag));
+  if (params.source !== undefined) search.set("source", params.source);
 
   const query = search.toString();
   return request<PredictionListResponse>(`/predictions${query ? `?${query}` : ""}`);
@@ -179,6 +198,13 @@ export function stopSimulator(): Promise<SimulatorStatus> {
 
 export function getSimulatorStatus(): Promise<SimulatorStatus> {
   return request<SimulatorStatus>("/simulator/status");
+}
+
+export function createPaymentIntent(amount: number): Promise<CreatePaymentIntentResponse> {
+  return request<CreatePaymentIntentResponse>("/create-payment-intent", {
+    method: "POST",
+    body: JSON.stringify({ amount }),
+  });
 }
 
 interface FastApiValidationError {
