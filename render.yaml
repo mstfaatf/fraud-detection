@@ -1,0 +1,80 @@
+# Render Blueprint for the FastAPI backend (see CLAUDE.md's "Development
+# Workflow" -- Docker Compose is the packaging deliverable, Render/Railway is
+# the actual backend host per the incremental-deploy plan).
+#
+# This repo's backend imports `ml/src/*` via a sys.path insert in
+# app/core/config.py (walking up from that file's own path for a .git
+# directory or the .repo-root marker file, so it's independent of the
+# process's working directory) and loads
+# ml/models/{xgboost_model.pkl,model_metadata.json,isolation_forest.pkl} at
+# startup -- all three are intentionally *not* gitignored (see .gitignore)
+# specifically so a git-based deploy like this one actually ships them.
+#
+# To use: Render dashboard -> New -> Blueprint -> point at this repo. Render
+# reads this file and provisions the service below; env vars marked sync:
+# false must be filled in by hand in the Render dashboard after creation
+# (Blueprints deliberately don't let secrets live in this committed file).
+services:
+  - type: web
+    name: fraud-detection-api
+    runtime: python
+    plan: free
+    branch: main
+    buildCommand: pip install -r backend/requirements.txt
+    # --app-dir backend: uvicorn changes into backend/ and adds it to
+    # sys.path so `app.main:app` resolves exactly as it does when run
+    # locally from backend/ (see SETUP.md) -- $PORT is Render's assigned
+    # port, not the local-dev default of 8000.
+    startCommand: uvicorn app.main:app --app-dir backend --host 0.0.0.0 --port $PORT
+    # NOTE: no preDeployCommand -- Render's free instance type doesn't
+    # support it ("pre-deploy command is not supported for free tier
+    # services"), confirmed when this Blueprint was actually applied. Schema
+    # is already migrated against Supabase (Phase 6 part 3); for any *future*
+    # schema change, run `cd backend && alembic upgrade head` by hand once
+    # via the Render Shell tab (uses migration_database_url / SUPABASE_DIRECT_URL
+    # below, same as this would have). Revisit adding this back if the
+    # service is ever upgraded off the free plan.
+    healthCheckPath: /health
+    envVars:
+      # --- Required: Supabase connection strings (see CLAUDE.md, Phase 6
+      # part 3) -- pulled directly from backend/app/core/config.py's Settings
+      # class, not guessed. Fill in via the Render dashboard after the
+      # Blueprint is created (sync: false = not stored in this file).
+      #
+      # SUPABASE_DATABASE_URL: the Transaction pooler string, port 6543 --
+      #   used for the app's normal runtime queries (Settings.runtime_database_url).
+      - key: SUPABASE_DATABASE_URL
+        sync: false
+      # SUPABASE_DIRECT_URL: on a network without an IPv6 route (see
+      #   CLAUDE.md's documented gotcha), this is Supabase's Session pooler
+      #   string instead of the true direct connection -- same host, port
+      #   5432 not 6543. Used only for Alembic (Settings.migration_database_url).
+      - key: SUPABASE_DIRECT_URL
+        sync: false
+      # --- CORS: the real production Vercel URL (Settings.frontend_origin,
+      # main.py). Preview-deployment URLs are covered separately by main.py's
+      # allow_origin_regex and don't need to be listed here.
+      - key: FRONTEND_ORIGIN
+        sync: false
+      # --- Everything below has a working default in Settings and does not
+      # strictly need to be set -- listed anyway so this file enumerates
+      # every Settings field per the deploy checklist, not just the ones
+      # that must change.
+      - key: FRAUD_LOG_LEVEL
+        value: INFO
+      # model_path / model_metadata_path / isolation_forest_path
+      # (FRAUD_MODEL_PATH / FRAUD_MODEL_METADATA_PATH / FRAUD_ISOLATION_FOREST_PATH)
+      # all default to ml/models/... resolved from the repo root Render
+      # checks out -- left unset deliberately, no override needed.
+      #
+      # database_url (FRAUD_DATABASE_URL) defaults to the local Docker
+      # Postgres string -- irrelevant on Render since SUPABASE_DATABASE_URL /
+      # SUPABASE_DIRECT_URL above take priority (Settings.runtime_database_url /
+      # migration_database_url) -- left unset deliberately.
+      #
+      # predict_rate_limit (PREDICT_RATE_LIMIT) defaults to "20/minute" --
+      # override here if the demo needs a different per-IP cap.
+      - key: PREDICT_RATE_LIMIT
+        value: 20/minute
+      - key: PYTHON_VERSION
+        value: 3.12.7

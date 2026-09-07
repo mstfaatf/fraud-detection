@@ -1,0 +1,51 @@
+name: Keep-alive ping
+
+# Mitigation for Render/Supabase free-tier cold starts (see CLAUDE.md's
+# "Free-tier cold-start mitigation" section) -- pings the backend's
+# GET /health endpoint on a schedule so it spins down from idle less often
+# before a real visitor shows up. GET /health does a real DB round trip
+# (a SELECT 1 against Supabase, see backend/app/api/health.py), so a single
+# ping touches both Render and Supabase, not just Render.
+#
+# This is a mitigation, not a guarantee: GitHub's own scheduled-workflow
+# docs are explicit that cron timing isn't exact (jobs can be delayed,
+# especially at the top of the hour when many repos' schedules collide),
+# and GitHub disables scheduled workflows on a repo after 60 days with no
+# commits -- an active portfolio repo isn't at meaningful risk of that
+# today, but it's worth knowing if this ever goes quiet for two months.
+# Supabase's own documented free-tier pause threshold (~1 week of true
+# inactivity, see CLAUDE.md Phase 6 part 3) is longer than any realistic
+# gap between these runs, so this ping should keep Supabase from ever
+# reaching that threshold -- but a genuinely idle multi-day stretch could
+# still coincide with a missed/delayed run and cold-start anyway.
+
+# Was temporarily disabled 2026-09-06 02:25 UTC through ~14:47 UTC (about
+# 12h20m) for a real cold-start measurement against a genuinely idle
+# Render/Supabase pair -- see CLAUDE.md's "Free-tier cold-start mitigation"
+# section for the result (a real cold start took ~95-105s, meaningfully
+# longer than this project's prior 20-50s estimate, which has been updated
+# accordingly). Restored below; back to its normal schedule.
+#
+# No-op touch (2026-09-06, later same day): after restoring the schedule
+# above, several hours passed with zero scheduled runs in Actions history --
+# only the one manual workflow_dispatch run showed up. YAML syntax, the
+# workflow's enabled status, and repo Actions permissions were all confirmed
+# correct; main is the default branch. This matches a known GitHub quirk
+# where the scheduler needs the workflow file force-touched (any content
+# change, committed and pushed) to re-register a schedule trigger -- this
+# comment block is that touch. See CLAUDE.md's Known Limitations for the
+# follow-up on whether this actually got a scheduled run firing.
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch: {}
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping backend /health
+        run: |
+          curl --max-time 60 -sS -o /dev/null -w "status=%{http_code} time=%{time_total}s\n" \
+            https://fraud-detection-api-blkr.onrender.com/health || \
+            echo "Ping failed or timed out -- likely just a cold start in progress, not treated as a workflow failure."

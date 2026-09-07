@@ -1,0 +1,44 @@
+# Real build context is the repo root, not backend/ (see the note at the top
+# of backend/Dockerfile -- ml/src and ml/models/*.pkl live outside backend/).
+# Patterns below are relative to the repo root accordingly. BuildKit picks
+# this file up automatically as the Dockerfile-specific ignore file only when
+# named backend/Dockerfile.dockerignore (its exact colocation convention) --
+# an identical copy is kept there for that reason; this file also covers a
+# context=backend/ build (e.g. testing the backend/ folder in isolation).
+
+# Local virtualenv -- this project uses one shared .venv/ at the repo root
+# (see CLAUDE.md's "Important Commands"); never bake it into the image.
+.venv/
+venv/
+env/
+
+# Python cache/build artifacts
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+*.egg-info/
+
+# Secrets -- never bake a real .env into the image; runtime config comes from
+# the container's own env vars instead.
+.env
+.env.local
+.env.*.local
+
+# Tests -- not needed at runtime
+backend/tests/
+ml/tests/
+
+# Everything else this image never touches
+.git/
+.github/
+docs/
+frontend/
+ml/data/
+ml/notebooks/
+*.md
+.vscode/
+.idea/
+*.log
+.DS_Store

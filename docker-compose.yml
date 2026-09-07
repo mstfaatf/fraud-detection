@@ -1,0 +1,152 @@
+# Full-stack local Docker Compose setup (Postgres + FastAPI + Next.js) --
+# the "end-of-project packaging deliverable" goal stated in CLAUDE.md's
+# "Development Workflow" section since the repo was first scaffolded, now
+# actually built out (Phase 11). This is a self-contained, reproducible
+# `docker compose up` for the whole stack, distinct from -- and not a
+# replacement for -- this project's normal day-to-day dev loop (uvicorn
+# --reload / npm run dev directly on the host, per "Development Workflow"),
+# and distinct from the live public deploy (Render backend + Vercel frontend
+# + Supabase, per Phase 8/CLAUDE.md), which this file has no connection to.
+#
+# This stack runs entirely against its OWN local `postgres` service below --
+# never against Supabase. See .env.example for the (short) list of env vars
+# this stack actually needs, which is deliberately a different, smaller list
+# than SETUP.md's Supabase-focused env vars.
+#
+# First-time setup: `docker compose up -d --build`, then run the one manual
+# migration step documented above the `backend` service below.
+services:
+  postgres:
+    image: postgres:16
+    container_name: fraud-detection-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: fraud
+      POSTGRES_PASSWORD: fraud
+      POSTGRES_DB: fraud_detection
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    # Confirmed this didn't already exist before adding it (Phase 11 part 3)
+    # -- without it, `depends_on: condition: service_healthy` below has
+    # nothing to wait on, and Compose would fall back to just "container
+    # started," which for Postgres can be well before it's actually accepting
+    # connections.
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fraud -d fraud_detection"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+  # Migrations: a documented manual step, not an auto-migrate-on-boot
+  # entrypoint. Deliberately chosen over an init container / "run alembic
+  # upgrade head before uvicorn starts" script: at this project's scale (a
+  # single developer running this stack locally, schema changes that are rare
+  # and already reviewed by hand before being applied anywhere -- see the
+  # Phase 9 addendum's real Supabase migration-lag incident, which happened
+  # precisely because a migration step was silent/automatic-feeling enough to
+  # forget, not because it was manual), a manual step is more transparent: a
+  # fresh `docker compose up` makes no undocumented schema changes on its own,
+  # and running the command by hand means whoever runs it can actually see
+  # its output (which migration ran, whether it succeeded) instead of it
+  # scrolling by in container startup logs or -- worse -- silently retrying
+  # forever inside an entrypoint script if it fails. First-time setup:
+  #
+  #   docker compose up -d --build
+  #   docker compose exec backend alembic upgrade head
+  #
+  # The second command only needs to be re-run when a NEW migration file is
+  # added (schema changes are rare) -- the `postgres_data` named volume below
+  # persists across `docker compose down`/`up`, so an already-migrated
+  # database stays migrated across ordinary restarts.
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: fraud-detection-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    environment:
+      # Compose-internal service name, not localhost -- this connection is
+      # made server-side by SQLAlchemy running inside this very container, so
+      # (unlike the frontend's NEXT_PUBLIC_API_URL below) Compose's internal
+      # DNS is exactly the right address here.
+      FRAUD_DATABASE_URL: postgresql://fraud:fraud@postgres:5432/fraud_detection
+      FRAUD_LOG_LEVEL: INFO
+      PORT: "8000"
+      # Force this stack to always run against its own local `postgres`
+      # service above, never Supabase -- explicit empty-string overrides
+      # (Settings.runtime_database_url/migration_database_url both treat an
+      # empty string as falsy and fall back to FRAUD_DATABASE_URL) so this
+      # stays true even if the root .env happens to have real Supabase
+      # credentials uncommented for an unrelated host-based test (see Phase 6
+      # part 3 / SETUP.md) -- `environment:` entries always take precedence
+      # over the same keys loaded from `env_file:` below, regardless of order.
+      SUPABASE_DATABASE_URL: ""
+      SUPABASE_DIRECT_URL: ""
+    # Optional: picks up STRIPE_SECRET_KEY / STRIPE_PUBLISHABLE_KEY /
+    # STRIPE_WEBHOOK_SECRET from the repo-root .env if present (see
+    # SETUP.md's "Stripe (test mode)" section) so the Stripe integration
+    # works in this stack too, without hardcoding secrets in this file.
+    # `required: false` means `docker compose up` still works with no .env at
+    # all -- Stripe-dependent endpoints then correctly 503 (see
+    # app/api/stripe_checkout.py), exactly like local dev without Stripe
+    # configured.
+    env_file:
+      - path: ./.env
+        required: false
+    # No bind mounts, on purpose: this is a self-contained, built image, not
+    # a live-reload dev setup -- `uvicorn --reload` run directly on the host
+    # (per "Development Workflow" above) is what that's for.
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        # THE CORE GOTCHA THIS BUILD ARG MUST GET RIGHT (see
+        # frontend/Dockerfile's own header comment for the full mechanism):
+        # NEXT_PUBLIC_API_URL is inlined into the CLIENT-SIDE JS bundle at
+        # `next build` time, and every page in this app that calls the
+        # backend does so from a "use client" component -- meaning this
+        # fetch runs in the visiting BROWSER on the host machine, never
+        # inside the frontend container. A browser has no way to resolve
+        # Compose's internal service DNS (`http://backend:8000` would fail
+        # outright from a browser) -- it can only reach the backend via the
+        # HOST-mapped port below (`http://localhost:8000`), the same address
+        # local dev already uses. This is deliberately NOT
+        # "http://backend:8000" even though that's the Compose-internal
+        # address for the backend service, for exactly this reason.
+        NEXT_PUBLIC_API_URL: http://localhost:8000
+        # Reuses the same STRIPE_PUBLISHABLE_KEY key the backend's env_file
+        # above already reads (root .env), rather than requiring a second,
+        # differently-named copy of the same value -- `:-` defaults to empty
+        # if unset, matching local dev's graceful no-Stripe-configured state.
+        NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY:-}
+    container_name: fraud-detection-frontend
+    restart: unless-stopped
+    depends_on:
+      # Startup-ordering convenience, not a hard technical requirement: this
+      # app's pages fetch client-side, well after the frontend container
+      # itself has started, so nothing here strictly needs the backend to be
+      # healthy first. Still worth waiting for, so `docker compose up`'s
+      # startup order visibly reflects the real dependency and a fresh
+      # `docker compose logs` doesn't show the frontend claiming to be ready
+      # before there's anything real for it to talk to.
+      backend:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    environment:
+      PORT: "3000"
+    # No bind mounts here either -- `npm run dev` on the host is the live-
+    # reload dev loop; this is the built, standalone production image.
+
+volumes:
+  postgres_data:

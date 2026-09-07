@@ -1,0 +1,21 @@
+# Build context here is frontend/ itself (see the note at the top of
+# Dockerfile) -- patterns below are relative to frontend/.
+
+node_modules
+.next
+.vercel
+
+# Local/secret env files -- NEXT_PUBLIC_* values are passed as --build-arg
+# instead (see Dockerfile), never baked in from a stray .env.local; the
+# backend's own STRIPE_SECRET_KEY-style secrets never belong in this app at all.
+.env.local
+.env*.local
+
+# Not needed in the image
+.git
+.eslintrc.json
+README.md
+*.tsbuildinfo
+coverage
+npm-debug.log*
+.DS_Store
