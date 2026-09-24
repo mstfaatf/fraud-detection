@@ -34,8 +34,8 @@ class TransactionType(str, enum.Enum):
     """Mirrors app.schemas.prediction.TransactionType's 5 PaySim categories.
 
     Deliberately redeclared here rather than imported: the db layer
-    shouldn't depend on the API schema layer (see CLAUDE.md "Architecture"
-    -- schemas/ and db/ are separate modules with separate concerns), even
+    shouldn't depend on the API schema layer (schemas/ and db/ are
+    separate modules with separate concerns), even
     though the underlying values are the same fixed PaySim vocabulary.
     """
 
@@ -61,7 +61,7 @@ class Transaction(Base):
     oldbalanceOrg: Mapped[float] = mapped_column(Float, nullable=False)
     oldbalanceDest: Mapped[float] = mapped_column(Float, nullable=False)
     nameDest: Mapped[str] = mapped_column(String, nullable=False)
-    # Derived from nameDest (starts with "M") at write time, per the Phase 1
+    # Derived from nameDest (starts with "M") at write time, per the
     # feature schema -- stored rather than recomputed on read so the stored
     # row reflects exactly what preprocessing.build_features() saw.
     is_merchant_dest: Mapped[bool] = mapped_column(Boolean, nullable=False)
@@ -102,7 +102,7 @@ class Prediction(Base):
     threshold_used: Mapped[float] = mapped_column(Float, nullable=False)
     # Isolation Forest's anomaly signal -- stored as a separate pair of
     # columns, never folded into fraud_probability/is_fraud. Per
-    # ISOLATION_FOREST_FINDINGS.md / CLAUDE.md, it must stay a distinct,
+    # ISOLATION_FOREST_FINDINGS.md, it must stay a distinct,
     # clearly-labeled secondary signal, including at rest in the db.
     anomaly_flag: Mapped[bool] = mapped_column(Boolean, nullable=False)
     anomaly_score: Mapped[float] = mapped_column(Float, nullable=False)

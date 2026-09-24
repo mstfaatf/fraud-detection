@@ -34,8 +34,8 @@ Concretely, per field:
   A card payment isn't a literal PaySim transaction type; TRANSFER is chosen
   deliberately over PAYMENT for a specific, checkable reason: PaySim's
   `type_PAYMENT` and `is_merchant_dest` are *perfectly* collinear in the
-  training data (every PAYMENT goes to a merchant account and vice versa --
-  see CLAUDE.md's Known Limitations). Since this adapter also sets
+  training data (every PAYMENT goes to a merchant account and vice versa).
+  Since this adapter also sets
   `is_merchant_dest`-equivalent to False (see below), pairing that with
   PAYMENT would hand the model a (type=PAYMENT, is_merchant_dest=False)
   combination that never occurs anywhere in training -- an even further
@@ -214,8 +214,7 @@ def build_transaction_input_for_payment_intent(payment_intent: Any) -> Transacti
     (from an already-expanded `customer` field on the PaymentIntent, or by
     calling the real Stripe API if `customer` is just an id string, or by
     creating a brand-new demo customer if there's no customer at all -- the
-    common case for a real trigger/test PaymentIntent, confirmed live: see
-    CLAUDE.md's Phase 9 part 2 verification) and then delegates to the pure
+    common case for a real trigger/test PaymentIntent, confirmed live) and then delegates to the pure
     mapping function above.
 
     Branches on `isinstance(customer_field, str)` / `is None` only -- never

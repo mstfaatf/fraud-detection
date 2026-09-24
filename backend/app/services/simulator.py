@@ -4,12 +4,12 @@ Generates synthetic pre-transaction payloads and scores each one through the
 real prediction pipeline (predict_transaction() -- the exact function POST
 /predict calls), on an asyncio background task, so the dashboard's live feed
 (GET /predictions polling) has continuous activity without a human submitting
-one transaction at a time via Test a Transaction. This is the "later-phase
-transaction simulator" flagged since Phase 1's Feature Schema notes.
+one transaction at a time via Test a Transaction. This is the transaction simulator
+anticipated by the feature schema's velocity notes.
 
 VELOCITY_SCENARIO_NOTE -- read before touching the "velocity" scenario:
-PaySim has only 0.15% repeat `nameOrig` values (see CLAUDE.md, Feature
-Schema -- "Excluded, insufficient data"), nowhere near enough to train real
+PaySim has only 0.15% repeat `nameOrig` values (excluded from the feature
+schema: insufficient data), nowhere near enough to train real
 account-history/velocity features on, and `TransactionInput` doesn't even
 accept an origin-account identifier (there's no `nameOrig` field on the API
 or the `transactions` table at all -- see app/schemas/prediction.py /
@@ -99,7 +99,7 @@ _SCENARIO_ORDER = [Scenario.LEGIT, Scenario.FRAUD, Scenario.VELOCITY]
 # Real wall-clock delay between transactions *within* one velocity burst --
 # deliberately much shorter than the loop's normal per-scenario pacing, so a
 # burst visibly reads as "several rows landing almost at once" in a
-# 7-second-polling dashboard feed (see CLAUDE.md's POLL_INTERVAL_MS).
+# 7-second-polling dashboard feed (see POLL_INTERVAL_MS in the frontend).
 _VELOCITY_INTRA_BURST_DELAY_SECONDS = 0.15
 
 
@@ -131,7 +131,7 @@ class TransactionGenerator:
         """A normal-looking transaction: type drawn from PaySim's overall
         type mix, amount from the legit amount distribution, and an origin
         balance sized so amount_to_balance_ratio -- the model's single
-        strongest feature (see CLAUDE.md's Phase 3 driver finding) --
+        strongest feature (the driver identified during model comparison) --
         lands comfortably below the near-1.0 fraud-signature band.
         """
         type_ = self._weighted_choice(LEGIT_TYPE_WEIGHTS)

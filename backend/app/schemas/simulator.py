@@ -25,7 +25,7 @@ class ScenarioWeights(BaseModel):
     # VELOCITY_SCENARIO_NOTE: this is a UI/demo illustration of a
     # rapid-succession burst, not a claim that the trained model detects
     # velocity/account-history patterns -- it was never fit on any such
-    # feature (CLAUDE.md, Feature Schema -- "Excluded, insufficient data").
+    # feature (excluded from the feature schema: insufficient data).
     velocity: float = Field(default=0.05, ge=0)
 
     @model_validator(mode="after")

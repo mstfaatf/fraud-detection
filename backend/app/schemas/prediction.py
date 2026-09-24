@@ -23,8 +23,8 @@ class TransactionInput(BaseModel):
 
     Deliberately excludes newbalanceOrig / newbalanceDest: those are
     post-transaction state that doesn't exist yet at real-time decision time
-    (see CLAUDE.md, "Feature Schema" -- Excluded, leakage). Accepting them
-    here would invite the exact leakage that section rules out.
+    (excluded as leakage in the feature schema). Accepting them
+    here would invite the exact leakage that exclusion rules out.
     """
 
     # Deliberate choice: silently ignore unrecognized fields (pydantic v2's
@@ -67,8 +67,8 @@ class PredictionResponse(BaseModel):
     # never override or auto-block based on an XGBoost decision.
     anomaly_flag: bool
     anomaly_score: float
-    # Top 5 by |shap_value|, not the full feature vector. Interpretation note
-    # (see CLAUDE.md, Known Limitations): is_merchant_dest carries 100% of the
+    # Top 5 by |shap_value|, not the full feature vector. Interpretation note:
+    # is_merchant_dest carries 100% of the
     # merchant/type_PAYMENT collinear signal in this model -- type_PAYMENT will
     # essentially always show ~0 and that is not "type doesn't matter here".
     shap_explanation: list[ShapContribution]
@@ -96,7 +96,7 @@ class PredictionListItem(BaseModel):
     oldbalanceDest: float
     is_merchant_dest: bool
     # "paysim_sim" (simulator / POST /predict / Test a Transaction) or
-    # "stripe_test" (POST /webhooks/stripe) -- see CLAUDE.md's Phase 9 part 2.
+    # "stripe_test" (POST /webhooks/stripe).
     source: str
 
     # Prediction output fields.

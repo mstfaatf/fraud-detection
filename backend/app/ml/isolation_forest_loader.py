@@ -1,6 +1,6 @@
 """Loads the Isolation Forest anomaly-detection model at app startup.
 
-ml/notebooks/07_isolation_forest.ipynb (Phase 4 part 2) was exploratory/
+ml/notebooks/07_isolation_forest.ipynb was exploratory/
 evaluative only, per its documented scope, and never pickled its trained
 model. ml/models/isolation_forest.pkl is produced separately by
 ml/src/serialize_isolation_forest.py, which retrains it with the exact same

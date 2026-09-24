@@ -28,8 +28,8 @@ const DEFAULT_AMOUNT = 100;
 // var(--color-*) references would resolve to nothing in there. These are
 // the same palette values as hardcoded hex, specifically so the card form
 // doesn't render as Stripe's default stark-white widget against this
-// project's dark-graphite theme (see CLAUDE.md's design-system notes on why
-// that default look is deliberately avoided everywhere else in this app).
+// project's dark-graphite theme (that default look is deliberately avoided
+// everywhere else in this app).
 const STRIPE_ELEMENTS_APPEARANCE = {
   theme: "night" as const,
   variables: {

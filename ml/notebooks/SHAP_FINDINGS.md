@@ -1,13 +1,12 @@
 # SHAP Explainability Findings — Phase 4
 
 Full notebook: `06_shap_explainability.ipynb`. Scope note: this covers **SHAP explainability on the
-chosen XGBoost model only**. Isolation Forest anomaly detection (also listed under Phase 4 in
-`CLAUDE.md`) is a separate, not-yet-started piece of work.
+chosen XGBoost model only**. Isolation Forest anomaly detection (the other half of the explainability work) is a separate, not-yet-started piece of work.
 
 Model, split, and threshold are unchanged from Phase 3: XGBoost (`n_estimators=200`, `max_depth=6`,
 `learning_rate=0.1`, `scale_pos_weight=974.05` computed from the train fold), the adjusted
 time-based split (`step <= 575`), and the chosen threshold (re-derived here as `0.614494`, matching
-the `~0.6145` documented in `CLAUDE.md` and reproducing `PHASE3_FINDINGS.md`'s confusion matrix
+the `~0.6145` documented earlier and reproducing `PHASE3_FINDINGS.md`'s confusion matrix
 exactly: TP=1,557, FP=179, FN=15, TN=160,270). No new modeling decisions were made in this phase —
 this is explanation of an existing, already-chosen model, not a new one.
 
@@ -43,7 +42,7 @@ magnitude gap between them, and the shape of everything below, that diverges.
 
 ## Collinearity resolution: `is_merchant_dest` / `type_PAYMENT`
 
-This directly answers the question `CLAUDE.md`'s Phase 3 forward-note raised: does SHAP attribute
+This directly answers the question raised in the Phase 3 findings: does SHAP attribute
 credit between this perfectly-collinear pair more sensibly than the built-in importances did?
 
 **No — SHAP shows the exact same zero, and it can't do otherwise.** `type_PAYMENT` has a SHAP

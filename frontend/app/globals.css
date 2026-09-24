@@ -4,8 +4,7 @@
 
 /*
  * Design tokens for the fraud-detection dashboard. Dark-only by design (this
- * is a fintech-dashboard aesthetic choice, not an adaptive light/dark app) --
- * see CLAUDE.md's frontend-scaffolding phase for the full palette rationale.
+ * is a fintech-dashboard aesthetic choice, not an adaptive light/dark app).
  *
  * Base: a warm graphite, not pure black-on-indigo. Accent: a single muted
  * gold/ochre used for chrome (nav, links, primary actions) -- deliberately

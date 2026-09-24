@@ -1,4 +1,4 @@
-"""Tests for ml/src/preprocessing.py — the leakage-safe Phase 1 feature pipeline."""
+"""Tests for ml/src/preprocessing.py — the leakage-safe feature pipeline."""
 
 import sys
 from pathlib import Path

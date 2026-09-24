@@ -1,6 +1,5 @@
 """Tests for GET /predictions and GET /predictions/{id} -- the read
-endpoints deferred from the persistence phase (see CLAUDE.md, "Known
-Limitations" -- "No GET/read endpoint exists yet") until real query
+endpoints, deferred until real query
 requirements (a dashboard feed + a detail view) were known.
 
 Seeds its own rows through the real POST /predict path (so they're realistic,
@@ -113,8 +112,8 @@ def test_list_includes_seeded_rows_with_joined_shape(client, seeded):
     assert legit_item["oldbalanceOrg"] == READ_TEST_LEGIT_PAYLOAD["oldbalanceOrg"]
     assert legit_item["oldbalanceDest"] == READ_TEST_LEGIT_PAYLOAD["oldbalanceDest"]
     assert legit_item["is_merchant_dest"] is True  # nameDest starts with "M"
-    # Everything scored through POST /predict is "paysim_sim" -- see
-    # CLAUDE.md's Phase 9 part 2 ("source" column / stripe_test).
+    # Everything scored through POST /predict is "paysim_sim" (the
+    # "source" column; the other value is stripe_test).
     assert legit_item["source"] == "paysim_sim"
 
     # Prediction fields, matching the POST /predict response for the same row.

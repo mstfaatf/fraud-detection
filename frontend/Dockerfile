@@ -3,8 +3,7 @@
 # Production-style multi-stage Dockerfile for the Next.js frontend -- built
 # for LOCAL full-stack Docker Compose use and containerization practice. This
 # is NOT how the live public frontend is deployed: Vercel builds this app
-# directly from its own Git-connected pipeline (see CLAUDE.md's Phase 8 part 1
-# deploy notes) and never touches this file.
+# directly from its own Git-connected pipeline and never touches this file.
 #
 # Unlike backend/Dockerfile, this app has no imports outside its own
 # directory (confirmed before writing this -- no `../../` imports anywhere
@@ -14,7 +13,7 @@
 #   docker build -t fraud-frontend -f frontend/Dockerfile ./frontend \
 #     --build-arg NEXT_PUBLIC_API_URL=http://localhost:8000
 #
-# docker-compose.yml (Phase 11 part 2) should use `build: {context: ./frontend,
+# docker-compose.yml should use `build: {context: ./frontend,
 # dockerfile: Dockerfile}`.
 #
 # ---- NEXT_PUBLIC_* env vars: build-time, not runtime -- read this before

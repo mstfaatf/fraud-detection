@@ -1,12 +1,10 @@
 # Full-stack local Docker Compose setup (Postgres + FastAPI + Next.js) --
-# the "end-of-project packaging deliverable" goal stated in CLAUDE.md's
-# "Development Workflow" section since the repo was first scaffolded, now
-# actually built out (Phase 11). This is a self-contained, reproducible
+# the end-of-project packaging deliverable. This is a self-contained, reproducible
 # `docker compose up` for the whole stack, distinct from -- and not a
 # replacement for -- this project's normal day-to-day dev loop (uvicorn
 # --reload / npm run dev directly on the host, per "Development Workflow"),
 # and distinct from the live public deploy (Render backend + Vercel frontend
-# + Supabase, per Phase 8/CLAUDE.md), which this file has no connection to.
+# + Supabase, per render.yaml), which this file has no connection to.
 #
 # This stack runs entirely against its OWN local `postgres` service below --
 # never against Supabase. See .env.example for the (short) list of env vars
@@ -28,7 +26,7 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    # Confirmed this didn't already exist before adding it (Phase 11 part 3)
+    # Confirmed this didn't already exist before adding it 
     # -- without it, `depends_on: condition: service_healthy` below has
     # nothing to wait on, and Compose would fall back to just "container
     # started," which for Postgres can be well before it's actually accepting
@@ -44,8 +42,8 @@ services:
   # entrypoint. Deliberately chosen over an init container / "run alembic
   # upgrade head before uvicorn starts" script: at this project's scale (a
   # single developer running this stack locally, schema changes that are rare
-  # and already reviewed by hand before being applied anywhere -- see the
-  # Phase 9 addendum's real Supabase migration-lag incident, which happened
+  # and already reviewed by hand before being applied anywhere -- a real
+  # Supabase migration-lag incident happened
   # precisely because a migration step was silent/automatic-feeling enough to
   # forget, not because it was manual), a manual step is more transparent: a
   # fresh `docker compose up` makes no undocumented schema changes on its own,
@@ -85,8 +83,7 @@ services:
       # (Settings.runtime_database_url/migration_database_url both treat an
       # empty string as falsy and fall back to FRAUD_DATABASE_URL) so this
       # stays true even if the root .env happens to have real Supabase
-      # credentials uncommented for an unrelated host-based test (see Phase 6
-      # part 3 / SETUP.md) -- `environment:` entries always take precedence
+      # credentials uncommented for an unrelated host-based test (see SETUP.md) -- `environment:` entries always take precedence
       # over the same keys loaded from `env_file:` below, regardless of order.
       SUPABASE_DATABASE_URL: ""
       SUPABASE_DIRECT_URL: ""

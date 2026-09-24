@@ -6,7 +6,7 @@ how the model would perform on transactions it hasn't seen yet. Chronological
 ordering is preserved end to end: sort -> split -> *then* preprocess, so that
 if a future feature ever needs a stateful, fitted transform (a scaler, a
 target encoder, etc.) it can be fit on the train split only without
-restructuring this module. The current Phase 1 feature schema
+restructuring this module. The current feature schema
 (`preprocessing.build_features`) is fully stateless/deterministic, so
 fit-on-train-only doesn't change today's output — this is future-proofing,
 not a current requirement.

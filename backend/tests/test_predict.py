@@ -118,7 +118,7 @@ def test_malformed_payload_returns_422(client, bad_payload):
 
 def test_post_transaction_leakage_fields_are_silently_ignored(client):
     """newbalanceOrig/newbalanceDest don't exist at real-time decision time
-    (see CLAUDE.md, "Feature Schema" -- Excluded, leakage) and aren't part of
+    (excluded as leakage in the feature schema) and aren't part of
     TransactionInput at all. Confirms the deliberately-chosen extra="ignore"
     behavior (see schemas/prediction.py): a client that includes them anyway
     doesn't get a 422, and -- more importantly -- the values have zero effect

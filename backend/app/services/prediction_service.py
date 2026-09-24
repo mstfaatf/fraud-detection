@@ -62,7 +62,7 @@ def predict_transaction(
     # IsolationForest.predict() computes decision_function(X), which is
     # itself just score_samples(X) - offset_ -- so calling both meant paying
     # for score_samples() twice per request (~24ms of the ~33ms measured
-    # total /predict latency, per CLAUDE.md's Phase 5 wrap-up breakdown).
+    # total /predict latency, measured per stage).
     # Calling score_samples() once and replicating predict()'s own
     # `decision_function(X) < 0 => -1` rule directly against offset_ gets the
     # identical flag with the computation done only once.
@@ -78,7 +78,7 @@ def predict_transaction(
     # Ranked once, in full: the POST /predict response only surfaces the top 5
     # (see PredictionResponse.shap_explanation), but the full ranked list is
     # persisted below so GET /predictions/{id} can show more than 5 later
-    # (per CLAUDE.md's read-endpoint spec) without re-running SHAP.
+    # without re-running SHAP.
     shap_row = explainer.shap_values(X)[0]
     ranked_idx = sorted(range(len(shap_row)), key=lambda i: -abs(shap_row[i]))
     full_shap_explanation = [
@@ -113,8 +113,7 @@ def _persist_prediction(
     Synchronous, in the request path -- a deliberate choice, not deferred to
     a background task. At this project's demo scale (single-digit
     requests/sec, not production traffic) a local Postgres insert adds a few
-    ms next to the ~33ms /predict already takes end-to-end (see CLAUDE.md's
-    Phase 5 wrap-up latency table), and a synchronous write means a
+    ms next to the ~33ms /predict already takes end-to-end, and a synchronous write means a
     caller's `is_fraud` result and its persisted row are never out of sync
     with each other -- a background task would only start paying for itself
     at a request volume this portfolio project isn't built to demonstrate.

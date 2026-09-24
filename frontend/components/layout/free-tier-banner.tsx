@@ -9,8 +9,7 @@ const DISMISS_KEY = "fraud-detection:free-tier-banner-dismissed";
  * (Render + Supabase), usually kept warm by a scheduled keep-alive ping, but
  * that an occasional first visit can still take up to a couple of minutes to
  * respond while the backend spins back up. The "up to a couple of minutes"
- * figure is a real measurement, not an estimate -- see CLAUDE.md's
- * "Free-tier cold-start mitigation" section: a genuine ~12h20m idle test
+ * figure is a real measurement, not an estimate: a genuine ~12h20m idle test
  * (keep-alive ping disabled) found the actual cold start took roughly
  * 95-105s. The "usually warm" framing was added once the keep-alive ping
  * was confirmed actually firing on its own schedule (a real "Scheduled" run
@@ -21,8 +20,7 @@ const DISMISS_KEY = "fraud-detection:free-tier-banner-dismissed";
  *
  * This is the calm, always-visible counterpart to the per-request "Waking
  * up the backend..." notices (components/ui/cold-start-notice.tsx) that
- * only appear once a specific request is actually slow -- see CLAUDE.md's
- * "Free-tier cold-start mitigation" section for how the two fit together.
+ * only appear once a specific request is actually slow.
  */
 export function FreeTierBanner() {
   // Renders nothing until mounted, matching what the server rendered, so

@@ -135,7 +135,7 @@ choice, not an oversight — see `preprocessing.py` and the notebook markdown.
 Even after excluding PaySim's fully degenerate day 30, the adjusted split's test set still runs at
 a ~9.5x higher fraud rate (0.97%) than the training set (0.10%), because of the *gradual*
 legitimate-transaction-volume decline across days 17–29 that the adjustment doesn't (and isn't
-meant to) fully flatten — see `CLAUDE.md` and `ml/src/split.py`.
+meant to) fully flatten — see `ml/src/split.py`.
 
 **Practical effect on these numbers:** both models were trained to recognize fraud against a
 background rate roughly 9-10x lower than what they're evaluated against. A model calibrated

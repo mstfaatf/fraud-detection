@@ -21,7 +21,7 @@ export type TransactionType = "CASH_IN" | "CASH_OUT" | "DEBIT" | "PAYMENT" | "TR
 /** Raw pre-transaction fields POST /predict accepts -- see TransactionInput
  * in backend/app/schemas/prediction.py. No newbalanceOrig/newbalanceDest:
  * those are post-transaction state the backend never accepts, on purpose
- * (see CLAUDE.md, "Feature Schema" -- Excluded, leakage). */
+ * (excluded as leakage in the feature schema). */
 export interface TransactionInput {
   step: number;
   type: TransactionType;

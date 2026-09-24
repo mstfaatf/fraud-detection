@@ -56,8 +56,7 @@ app = FastAPI(title="Fraud Detection API", lifespan=lifespan)
 
 # Per-IP rate limiting (slowapi) -- open item since the backend skeleton phase,
 # closed here because /predict is now genuinely public. Keyed on remote address
-# (no auth/API-key layer exists to key on instead -- see CLAUDE.md's Known
-# Limitations). `limiter` itself lives in app/core/limiter.py (shared with
+# (no auth/API-key layer exists to key on instead). `limiter` itself lives in app/core/limiter.py (shared with
 # app/api/predict.py, which applies it as a decorator) to avoid a circular
 # import between this module and the routers it registers below. The actual
 # rate cap is applied only on the /predict route, not globally, since the

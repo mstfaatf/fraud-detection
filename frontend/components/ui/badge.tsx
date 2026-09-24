@@ -12,7 +12,7 @@ export type RiskVariant = "fraud" | "elevated" | "legit" | "anomaly";
  * anomaly is an outline in a third, unrelated hue: it's a genuinely
  * different signal (Isolation Forest, not XGBoost's probability) and must
  * never be confused with a fraud-probability tier (see
- * ISOLATION_FOREST_FINDINGS.md / CLAUDE.md -- 0% unique-catch precision on
+ * ISOLATION_FOREST_FINDINGS.md -- 0% unique-catch precision on
  * the eval set, never meant to override the fraud call). Nothing here is
  * filled except the two real decision outcomes -- deliberately not a
  * status-color rainbow.

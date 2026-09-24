@@ -1,8 +1,7 @@
 """Leakage-safe preprocessing pipeline for the PaySim fraud dataset.
 
-Turns a raw PaySim dataframe into the finalized Phase 1 feature set (see
-CLAUDE.md, "Feature Schema" section, for the rationale behind every
-inclusion/exclusion here). This module is imported both at training time
+Turns a raw PaySim dataframe into the finalized feature set (the rationale for
+every inclusion/exclusion is in the comments below). This module is imported both at training time
 (ml/) and, later, at inference time (backend/) — keep it dependency-light
 and free of notebook-only code.
 """
@@ -27,17 +26,17 @@ BALANCE_EPSILON = 1.0
 
 # Columns intentionally excluded from the trained model's feature set.
 # Kept here (rather than just omitted) so the reason is explicit and can't
-# silently regress if someone adds a column back without reading CLAUDE.md.
+# silently regress if someone adds a column back without understanding why it was excluded.
 LEAKAGE_COLUMNS = [
     # Post-transaction state — not known at real-time scoring time, when a
     # payment must be scored *before* it executes. Excluded regardless of
-    # predictive power (see CLAUDE.md: "Excluded — leakage").
+    # predictive power (excluded as leakage).
     "newbalanceOrig",
     "newbalanceDest",
     # Row identifiers, not predictive features.
     "nameOrig",
     "nameDest",
-    # Empirically unreliable per Phase 1 EDA (16/6.36M rows flagged, and the
+    # Empirically unreliable per EDA (16/6.36M rows flagged, and the
     # documented ">200,000 transfer" rule doesn't hold in the data).
     "isFlaggedFraud",
 ]
@@ -92,7 +91,7 @@ FEATURE_COLUMNS = [
 
 
 def build_features(df: pd.DataFrame) -> tuple[pd.DataFrame, "pd.Series | None", list[str]]:
-    """Build the Phase 1 feature matrix from a raw PaySim dataframe.
+    """Build the feature matrix from a raw PaySim dataframe.
 
     Parameters
     ----------

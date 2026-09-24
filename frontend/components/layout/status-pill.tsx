@@ -9,7 +9,7 @@ import { useHealth, useSlowLoading } from "@/lib/hooks";
  *
  * This is also the very first request the app makes on any page load, so
  * it's the earliest place a Render/Supabase free-tier cold start would show
- * up -- see CLAUDE.md's "Free-tier cold-start mitigation" section. */
+ * up. */
 export function StatusPill() {
   const { data, isError, isLoading } = useHealth();
   const slow = useSlowLoading(isLoading);

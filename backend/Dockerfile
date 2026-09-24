@@ -11,13 +11,13 @@
 #   docker build -t fraud-backend -f backend/Dockerfile .
 # `docker build -t fraud-backend ./backend` (context = backend/ alone) will
 # fail: app/core/config.py resolves REPO_ROOT by walking up from its own file
-# looking for a CLAUDE.md marker, then puts ml/src/ on sys.path (`import
+# looking for a .repo-root marker (.git is excluded from the build context), then puts ml/src/ on sys.path (`import
 # preprocessing`) and loads ml/models/{xgboost_model.pkl,model_metadata.json,
 # isolation_forest.pkl} at startup -- none of which live under backend/, so a
 # backend/-only build context has no way to COPY them in. This was confirmed
-# by actually trying the backend/-only build first, not assumed -- see
-# CLAUDE.md's Docker section for the real error message.
-# docker-compose.yml (Phase 11) should set `build: {context: ., dockerfile:
+# by actually trying the backend/-only build first, not assumed
+# (`COPY ml/src ./ml/src: "/ml/src": not found`).
+# docker-compose.yml sets `build: {context: ., dockerfile:
 # backend/Dockerfile}` for the same reason.
 
 # ---- Build stage: compile/install Python dependencies into a venv ----
@@ -35,7 +35,7 @@
 FROM python:3.12-slim-bookworm AS builder
 
 # build-essential + python3-dev cover any dependency that doesn't ship a
-# prebuilt wheel for this platform. Confirmed empirically (see CLAUDE.md) that
+# prebuilt wheel for this platform. Confirmed empirically that
 # every package in backend/requirements.txt -- including psycopg2-binary,
 # pandas, scikit-learn, xgboost, and shap -- actually installs from prebuilt
 # manylinux wheels for cpython 3.12/linux-amd64, so nothing here truly needs
@@ -65,8 +65,9 @@ ENV PATH="/opt/venv/bin:$PATH" \
     PYTHONUNBUFFERED=1
 
 # Repo-root marker (see the note at the top of this file) -- app/core/config.py
-# walks up from backend/app/core/config.py looking for this exact filename.
-COPY CLAUDE.md ./CLAUDE.md
+# walks up from backend/app/core/config.py looking for this exact filename
+# (or a .git directory, which is excluded from the build context).
+COPY .repo-root ./.repo-root
 
 # ml/src (imported via the sys.path insert in app/core/config.py) and exactly
 # the three trained-model artifacts the app actually loads at startup -- the
@@ -79,12 +80,10 @@ COPY ml/models/xgboost_model.pkl ml/models/model_metadata.json ml/models/isolati
 
 COPY backend/app ./backend/app
 
-# Alembic config + migration scripts -- a real gap found and fixed during
-# Phase 11 part 4's live verification: this Dockerfile originally copied only
-# backend/app, so `docker compose exec backend alembic upgrade head` (the
-# documented migration step, see docker-compose.yml) failed with "No
-# 'script_location' key found in configuration" -- alembic.ini and alembic/
-# genuinely weren't in the image at all. `alembic.ini`'s `script_location =
+# Alembic config + migration scripts -- without these,
+# `docker compose exec backend alembic upgrade head` (the documented migration
+# step, see docker-compose.yml) fails with "No 'script_location' key found in
+# configuration". `alembic.ini`'s `script_location =
 # %(here)s/alembic` resolves relative to alembic.ini's own directory (the
 # `%(here)s` token, Alembic 1.9+), so both must land at the same relative
 # path to WORKDIR /app/backend below as they have in the real repo.

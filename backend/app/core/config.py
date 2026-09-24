@@ -1,11 +1,11 @@
 """Env-driven backend configuration.
 
-Also resolves the repo root (by walking up for the CLAUDE.md marker, the same
-pattern every ml/notebooks/*.ipynb and ml/tests/*.py use) and puts ml/src/ on
-sys.path so app/ml/*.py can `import preprocessing` / `import split` directly
-instead of duplicating that logic in the backend. This cross-directory import
-is a bit awkward (see the forward-note in CLAUDE.md) but avoids a real
-duplication risk between training and serving feature code.
+Also resolves the repo root (by walking up for a .git directory or the tracked
+.repo-root marker file, the same pattern the ml/ scripts and notebooks use) and
+puts ml/src/ on sys.path so app/ml/*.py can `import preprocessing` /
+`import split` directly instead of duplicating that logic in the backend. This
+cross-directory import is a bit awkward but avoids a real duplication risk
+between training and serving feature code.
 """
 
 from __future__ import annotations
@@ -19,9 +19,9 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 def _find_repo_root(start: Path) -> Path:
     for parent in [start, *start.parents]:
-        if (parent / "CLAUDE.md").exists():
+        if (parent / ".git").exists() or (parent / ".repo-root").exists():
             return parent
-    raise FileNotFoundError("Could not locate repo root (looked for CLAUDE.md)")
+    raise FileNotFoundError("Could not locate repo root (looked for .git or .repo-root)")
 
 
 REPO_ROOT = _find_repo_root(Path(__file__).resolve())
@@ -33,10 +33,10 @@ if str(ML_SRC_DIR) not in sys.path:
 
 class Settings(BaseSettings):
     # env_file is REPO_ROOT / ".env", not the literal relative string ".env"
-    # -- a real bug found and fixed in Phase 9 part 2's live Stripe webhook
-    # verification: pydantic-settings resolves a relative env_file against the
-    # process's cwd at Settings() instantiation time, not against this file's
-    # own directory. SETUP.md's/CLAUDE.md's documented dev workflow runs the
+    # -- found during live Stripe webhook verification: pydantic-settings
+    # resolves a relative env_file against the process's cwd at Settings()
+    # instantiation time, not against this file's own directory. The
+    # documented dev workflow (see SETUP.md) runs the
     # backend as `uvicorn app.main:app --reload` from backend/ as cwd, so the
     # relative ".env" was silently resolving to backend/.env (which has never
     # existed) instead of the real repo-root .env -- meaning every setting
@@ -104,9 +104,8 @@ class Settings(BaseSettings):
     # stripe_adapter.py touches these, and stripe_adapter.py's own pure mapping
     # function (map_payment_intent_to_transaction_input) doesn't need them
     # either -- only the real-API helpers (get_or_create_demo_customer) do.
-    # stripe_webhook_secret is unused for now -- no webhook endpoint exists yet
-    # (out of scope for this pass, see CLAUDE.md), included here so it's ready
-    # for that phase without a second config change.
+    # stripe_webhook_secret is used by POST /webhooks/stripe to verify event
+    # signatures (see app/api/stripe_webhooks.py).
     stripe_secret_key: str | None = Field(default=None, validation_alias="STRIPE_SECRET_KEY")
     stripe_publishable_key: str | None = Field(default=None, validation_alias="STRIPE_PUBLISHABLE_KEY")
     stripe_webhook_secret: str | None = Field(default=None, validation_alias="STRIPE_WEBHOOK_SECRET")

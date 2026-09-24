@@ -1,6 +1,5 @@
 """GET /predictions and GET /predictions/{id} -- read endpoints for scored
-predictions, deferred from the persistence phase (see CLAUDE.md, "Known
-Limitations" -- "No GET/read endpoint exists yet") until real query
+predictions, deferred until real query
 requirements were known: a dashboard feed (paginated list, filterable by
 fraud/anomaly outcome) and a single-transaction detail view (full SHAP
 explanation, not the top-5 capped list POST /predict returns).

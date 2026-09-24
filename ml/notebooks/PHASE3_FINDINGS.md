@@ -66,7 +66,7 @@ never fraud) is still useful splitting information for a tree. `type_DEBIT` and 
 both ~0, consistent with `DEBIT` never carrying fraud and no meaningful weekly pattern in the
 simulation.
 
-**Collinearity flag (documented, not fixed):** per the Phase 3 forward-note in `CLAUDE.md`,
+**Collinearity flag (documented, not fixed):** as anticipated earlier in this project,
 `is_merchant_dest` and `type_PAYMENT` are perfectly collinear in PaySim. Their importances came
 out split unevenly (0.052 vs. 0.061, ratio ≈0.85) rather than identical — unlike the Phase 2
 Logistic Regression coefficients, which L2's minimum-norm solution forced to be exactly equal
@@ -162,7 +162,7 @@ both — once an early tree splits on one of two identical columns, there is no 
 signal for the other column to improve on, so it can end up entirely unused. **This should be read
 as "XGBoost happened to route the entire merchant-destination signal through `is_merchant_dest`
 instead of `type_PAYMENT`," not as "`type_PAYMENT` doesn't matter."** This is precisely the kind
-of case the Phase 3 forward-note in `CLAUDE.md` anticipated SHAP would need to handle more
+of case that was anticipated SHAP would need to handle more
 carefully than raw importance scores — not attempted in this pass.
 
 ## Not done here (by design)
@@ -213,7 +213,7 @@ concern:
 | full test-set (162K rows) batch latency | 0.18 s | 0.09 s |
 | pickled model size | 55.1 MB | 0.6 MB (~92x smaller) |
 
-`CLAUDE.md` establishes this as a **real-time** fraud detector — a payment is scored before it
+This project is a **real-time** fraud detector — a payment is scored before it
 executes, meaning one `predict_proba` call per incoming transaction in the backend, not a batch
 job — which makes single-prediction latency and deployed model size directly relevant engineering
 considerations. Both effects trace to the same cause: 200 trees at `max_depth=12` (Random Forest)
@@ -263,8 +263,7 @@ PaySim-based project.
 
 ## Residual split skew applies equally to this comparison
 
-The adjusted split's ~9.5x train/test fraud-rate skew (see `CLAUDE.md`, "Time-Based Split
-Methodology") applies identically to all four models compared here — same training-fold rate
+The adjusted split's ~9.5x train/test fraud-rate skew (see the time-based split notes in `ml/src/split.py`) applies identically to all four models compared here — same training-fold rate
 (~0.10%), same test-fold rate (~0.97%) for every model — so while it plausibly understates
 absolute recall for all four relative to a hypothetical rate-matched split, it does not bias the
 comparison or the resulting model/threshold choice.

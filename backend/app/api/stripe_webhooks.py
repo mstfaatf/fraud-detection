@@ -4,8 +4,8 @@ in real time and takes a real gating action on it, not just a passive log.
 **Listens for `payment_intent.created` specifically**, not `.succeeded` or
 `.confirmed` -- scoring has to happen *before* a payment is confirmed for a
 "cancel it" action to mean anything, consistent with this project's
-real-time, score-before-execution philosophy (see CLAUDE.md's Feature Schema
-section: "a payment is scored *before* it executes"). Every other event type
+real-time, score-before-execution philosophy (a payment is scored
+*before* it executes). Every other event type
 is acknowledged with a 200 and ignored -- Stripe expects a fast 2xx for
 anything it sends, even events an endpoint doesn't act on; returning
 non-200 for an event type this endpoint deliberately doesn't handle would

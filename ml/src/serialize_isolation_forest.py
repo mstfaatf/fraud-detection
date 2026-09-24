@@ -1,9 +1,9 @@
 """Serializes the Isolation Forest anomaly-detection model to ml/models/isolation_forest.pkl.
 
-ml/notebooks/07_isolation_forest.ipynb (Phase 4 part 2) was exploratory/evaluative only, per its
+ml/notebooks/07_isolation_forest.ipynb was exploratory/evaluative only, per its
 documented scope, and never pickled its trained model. This script retrains it with the exact same
-hyperparameters, split, and feature pipeline documented there and in CLAUDE.md / ISOLATION_FOREST_FINDINGS.md,
-so the backend (Phase 5.1) has an artifact to load. `contamination=0.01` is set at fit time here
+hyperparameters, split, and feature pipeline documented there and in ISOLATION_FOREST_FINDINGS.md,
+so the backend has an artifact to load. `contamination=0.01` is set at fit time here
 (rather than left at "auto" as in the notebook) so the serialized model's own `.predict()` / `.offset_`
 matches the chosen operating threshold from that notebook -- this does not change the fitted trees or
 anomaly scores, since `contamination` only affects the post-fit `offset_` computation, not tree
@@ -24,9 +24,9 @@ CONTAMINATION = 0.01
 
 def find_repo_root(start: Path) -> Path:
     for parent in [start, *start.parents]:
-        if (parent / "CLAUDE.md").exists():
+        if (parent / ".git").exists() or (parent / ".repo-root").exists():
             return parent
-    raise FileNotFoundError("Could not locate repo root (looked for CLAUDE.md)")
+    raise FileNotFoundError("Could not locate repo root (looked for .git or .repo-root)")
 
 
 def main() -> None:

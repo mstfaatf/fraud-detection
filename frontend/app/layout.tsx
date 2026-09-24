@@ -9,8 +9,7 @@ import { Providers } from "./providers";
 
 // Fraunces (display serif, headings/wordmark) + IBM Plex Sans (body/UI) +
 // IBM Plex Mono (numbers, feature names, anything table-like) -- a
-// deliberate pairing, not the default Inter/Geist system-sans stack. See
-// CLAUDE.md's frontend-scaffolding phase for the full rationale.
+// deliberate pairing, not the default Inter/Geist system-sans stack.
 const fraunces = Fraunces({
   subsets: ["latin"],
   variable: "--font-display",

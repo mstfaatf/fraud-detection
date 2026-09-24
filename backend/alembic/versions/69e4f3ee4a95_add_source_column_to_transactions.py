@@ -28,7 +28,7 @@ def upgrade() -> None:
     # historical value, not NULL), and it's also a safety-net default for any
     # future insert that doesn't explicitly pass `source`. The ORM layer
     # (app/db/models.py, app/services/prediction_service.py) always passes
-    # `source` explicitly going forward -- see CLAUDE.md's Phase 9 part 2.
+    # `source` explicitly going forward.
     op.add_column('transactions', sa.Column('source', sa.String(), server_default='paysim_sim', nullable=False))
     # ### end Alembic commands ###
 

@@ -33,7 +33,6 @@ function shouldRetry(failureCount: number, error: unknown): boolean {
  * least SLOW_REQUEST_THRESHOLD_MS. Distinguishes ordinary brief loading from
  * a request that's probably hitting Render/Supabase's free-tier cold start
  * (backend spun down from idle, or Supabase's own pooler waking up) -- see
- * CLAUDE.md's "Free-tier cold-start mitigation" section and
  * components/ui/cold-start-notice.tsx, which this is meant to gate. */
 export function useSlowLoading(active: boolean, delayMs: number = SLOW_REQUEST_THRESHOLD_MS): boolean {
   const [slow, setSlow] = useState(false);

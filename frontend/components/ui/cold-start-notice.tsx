@@ -2,8 +2,7 @@
  * Shown in place of (or alongside) a bare "Loading…"/spinner once
  * useSlowLoading (lib/hooks.ts) decides a request has been pending long
  * enough to probably be a Render/Supabase free-tier cold start rather than
- * ordinary network latency -- see CLAUDE.md's "Free-tier cold-start
- * mitigation" section. Deliberately worded as a status, not an error: this
+ * ordinary network latency. Deliberately worded as a status, not an error: this
  * is expected free-tier behavior, not something broken.
  *
  * "Up to a couple of minutes" is a real measured figure, not a guess: a

@@ -70,8 +70,8 @@ def _payment_intent(pi_id: str, amount_dollars: float, wallet_balance: float) ->
 
 # Draining-pattern amount verified (manually, against the real model) to
 # clear the fraud threshold even with stripe_adapter.py's fixed
-# SYNTHETIC_DEST_BALANCE -- see CLAUDE.md's Phase 9 part 2 notes on how that
-# fixed destination balance suppresses probability at smaller amounts.
+# SYNTHETIC_DEST_BALANCE (that fixed destination balance suppresses
+# probability at smaller amounts).
 FRAUD_SHAPED_PI = _payment_intent("pi_test_fraud_shaped", amount_dollars=5_000_000.0, wallet_balance=5_000_000.0)
 LEGIT_SHAPED_PI = _payment_intent("pi_test_legit_shaped", amount_dollars=5_000.0, wallet_balance=5_000.0)
 

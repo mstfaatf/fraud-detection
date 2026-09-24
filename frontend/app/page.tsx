@@ -47,8 +47,7 @@ export default function OverviewPage() {
   const items = recentQuery.data?.items ?? [];
 
   // Overview is the most likely first page a visitor lands on, so this is
-  // usually the first place a Render/Supabase free-tier cold start (see
-  // CLAUDE.md's "Free-tier cold-start mitigation" section) would show up.
+  // usually the first place a Render/Supabase free-tier cold start would show up.
   // Any of these four requests still pending counts -- they all hit the
   // same backend in parallel on mount.
   const isSlow = useSlowLoading(

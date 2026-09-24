@@ -21,7 +21,7 @@ class ModelLoadError(RuntimeError):
 def load_model(settings: Settings) -> tuple[Any, dict]:
     if not settings.model_path.exists():
         raise ModelLoadError(
-            f"XGBoost model not found at {settings.model_path} -- run the Phase 3/4 "
+            f"XGBoost model not found at {settings.model_path} -- run the "
             "training notebooks (ml/notebooks/) to generate it."
         )
     if not settings.model_metadata_path.exists():

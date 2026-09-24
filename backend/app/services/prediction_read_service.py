@@ -1,14 +1,13 @@
 """Query logic behind GET /predictions and GET /predictions/{id}.
 
 Kept out of app/api/predictions.py per this project's services/ convention
-("business logic orchestrating db/ml/features" -- see CLAUDE.md
-"Architecture"), even though these queries don't touch ml/features -- the
+("business logic orchestrating db/ml/features"), even though these queries don't touch ml/features -- the
 route handlers stay thin either way, mirroring app/api/predict.py's split
 against app/services/prediction_service.py.
 
 Pagination: offset/limit, not cursor-based. Chosen because this project's
-demo-scale dataset (single-digit requests/sec, no production traffic --
-see CLAUDE.md's persistence-phase latency notes) has no need for
+demo-scale dataset (single-digit requests/sec, no production traffic)
+has no need for
 cursor-pagination's consistency-under-concurrent-writes benefit, and
 offset/limit is simpler to consume from a first dashboard page (jump to a
 specific page number, show total count) than an opaque cursor would be.

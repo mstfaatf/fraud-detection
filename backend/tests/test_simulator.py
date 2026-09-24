@@ -6,7 +6,7 @@ Runs against the real app (TestClient, real ML layer, real local Postgres)
 like the rest of this suite. A short simulator run at a fast rate adds a
 handful of real rows to the shared dev database -- consistent with how
 test_predict.py / test_persistence.py / test_predictions_read.py already
-add rows to it (see CLAUDE.md's Known Limitations note on this convention).
+add rows to it.
 Kept brief (sub-two-second runs) specifically to keep that addition small.
 """
 

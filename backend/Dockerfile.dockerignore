@@ -7,7 +7,7 @@
 # context=backend/ build (e.g. testing the backend/ folder in isolation).
 
 # Local virtualenv -- this project uses one shared .venv/ at the repo root
-# (see CLAUDE.md's "Important Commands"); never bake it into the image.
+# (see SETUP.md); never bake it into the image.
 .venv/
 venv/
 env/
@@ -38,7 +38,6 @@ frontend/
 ml/data/
 ml/notebooks/
 *.md
-!CLAUDE.md
 .vscode/
 .idea/
 *.log

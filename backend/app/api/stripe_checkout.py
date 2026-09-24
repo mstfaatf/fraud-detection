@@ -14,7 +14,7 @@ frontend calls directly, a different enough concern to warrant its own file.
 
 Reuses a fresh demo customer (app.services.stripe_adapter.
 get_or_create_demo_customer) per checkout attempt, exactly the same helper
-Phase 9 part 1/2 already built and tested -- not a new customer-management
+the Stripe adapter already builds and tests -- not a new customer-management
 scheme. Attaching that customer to the created PaymentIntent means the
 webhook's real usage path (build_transaction_input_for_payment_intent) reads
 back the *same* seeded wallet_balance this endpoint already fetched, rather
@@ -44,7 +44,7 @@ router = APIRouter()
 _CREATE_PAYMENT_INTENT_RATE_LIMIT = "10/minute"
 
 # Overrides stripe_adapter.DEFAULT_WALLET_SEED_BALANCE ($50,000) for this one
-# call site only. Measured live (see CLAUDE.md's Phase 9 part 3): the
+# call site only. Measured live: the
 # model's amount_to_balance_ratio signal is an extremely narrow band right
 # at ratio == 1.0 (a 5-10% miss collapses fraud_probability back to near
 # zero -- confirmed by sweeping ratios 0.9-1.5), and at the $50,000 scale,

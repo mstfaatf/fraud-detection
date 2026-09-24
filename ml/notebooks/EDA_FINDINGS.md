@@ -79,8 +79,7 @@ detection signal.
 
 ## What changes in our planned feature schema
 
-This resolves the open question in `CLAUDE.md` ("final feature schema not yet finalized pending
-EDA"):
+This resolves the open question of the final feature schema, which was pending EDA:
 
 - We can likely **restrict modeling to `TRANSFER` and `CASH_OUT` transactions**, or at minimum
   make `type` a first-class feature — the other three types contribute zero fraud signal and
@@ -160,8 +159,7 @@ EDA"):
 **Synthetic / demo-only (not present in PaySim; never trained-model inputs)**
 - Merchant category, device/channel, geo-style fields — useful for dashboard flavor and
   explainability storytelling later, but PaySim has no such fields and the trained model will
-  never see them as inputs. Ties into the still-open "Stripe field-mapping adapter" item in
-  `CLAUDE.md`.
+  never see them as inputs. Ties into the Stripe field-mapping adapter work.
 
 ## Not done here (by design)
 
