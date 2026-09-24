@@ -31,6 +31,23 @@ if str(ML_SRC_DIR) not in sys.path:
     sys.path.insert(0, str(ML_SRC_DIR))
 
 
+def _normalize_pg_url(url: str) -> str:
+    """Pin the SQLAlchemy driver to psycopg2, the only Postgres driver this
+    project installs (backend/requirements.txt: psycopg2-binary).
+
+    A bare `postgresql://` already resolves to psycopg2, but a hosting
+    dashboard or copy-pasted connection string may carry another scheme
+    (`postgres://`, which SQLAlchemy 2 rejects, or `postgresql+psycopg://`,
+    which selects the psycopg v3 driver and crashes at engine creation with
+    "No module named 'psycopg'"). Rewriting the scheme here keeps the driver
+    consistent with what is actually installed, whatever the env var says.
+    """
+    for prefix in ("postgresql+psycopg://", "postgresql+psycopg2://", "postgres://", "postgresql://"):
+        if url.startswith(prefix):
+            return "postgresql+psycopg2://" + url[len(prefix):]
+    return url
+
+
 class Settings(BaseSettings):
     # env_file is REPO_ROOT / ".env", not the literal relative string ".env"
     # -- found during live Stripe webhook verification: pydantic-settings
@@ -113,12 +130,12 @@ class Settings(BaseSettings):
     @property
     def runtime_database_url(self) -> str:
         """What app/db/session.py's engine actually connects to."""
-        return self.supabase_database_url or self.database_url
+        return _normalize_pg_url(self.supabase_database_url or self.database_url)
 
     @property
     def migration_database_url(self) -> str:
         """What alembic/env.py actually connects to."""
-        return self.supabase_direct_url or self.database_url
+        return _normalize_pg_url(self.supabase_direct_url or self.database_url)
 
     @property
     def is_pooled_connection(self) -> bool:
